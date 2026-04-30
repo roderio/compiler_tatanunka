@@ -1,0 +1,6 @@
+main:
+{
+	var a=10;
+	va b=20;
+	return a+b;
+}

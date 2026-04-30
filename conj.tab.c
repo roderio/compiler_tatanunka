@@ -1,0 +1,1596 @@
+// A Bison parser, made by GNU Bison 3.8.2.
+
+// Skeleton implementation for Bison LALR(1) parsers in C++
+
+// Copyright (C) 2002-2015, 2018-2021 Free Software Foundation, Inc.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// As a special exception, you may create a larger work that contains
+// part or all of the Bison parser skeleton and distribute that work
+// under terms of your choice, so long as that work isn't itself a
+// parser generator using the skeleton or a modified version thereof
+// as a parser skeleton.  Alternatively, if you modify or redistribute
+// the parser skeleton itself, you may (at your option) remove this
+// special exception, which will cause the skeleton and the resulting
+// Bison output files to be licensed under the GNU General Public
+// License without this special exception.
+
+// This special exception was added by the Free Software Foundation in
+// version 2.2 of Bison.
+
+// DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+// especially those whose name start with YY_ or yy_.  They are
+// private implementation details that can be changed or removed.
+
+
+
+
+
+#include "conj.tab.h"
+
+
+// Unqualified %code blocks.
+#line 84 "conj.y"
+
+struct lexcontext
+{
+    const char* cursor;
+    yy::location loc;
+    std::vector<std::map<std::string, identifier>> scopes;
+    std::vector<function> func_list;
+    unsigned tempcounter = 0;
+    function fun;
+    public:
+        const identifier& define(const std::string& name, identifier&& f)
+        {
+            auto r = scopes.back().emplace(name, std::move(f));
+            if(!r.second) throw yy::conj_parser::syntax_error(loc, "Duplicate defintion <"+name+">");
+            return r.first->second;
+        }
+        expression def(const std::string& name)     { return define(name, identifier {id_type::variable, fun.num_vars++, name}); }
+        expression defun(const std::string& name)   { return define(name, identifier {id_type::function, func_list.size(), name}); }
+        expression defparm(const std::string& name) { return define(name, identifier {id_type::parameter, fun.num_params++, name}); }
+        expression temp()                           { return def("$I" + std::to_string(tempcounter++)); }
+        expression use(const std::string& name)
+        {
+            for(auto j = scopes.crbegin(); j!=scopes.crend(); ++j)
+                if(auto i = j->find(name); i!=j->end())
+                    return i->second;
+            throw yy::conj_parser::syntax_error("Undefined identifier <"+name+">");
+        }
+        void add_function(std::string&& name, expression&& code)
+        {
+            fun.code = e_comma(std::move(code), e_ret(0l));
+            fun.name = std::move(name);
+            func_list.push_back(std::move(fun));
+            fun = {};
+        }
+        void operator ++() { scopes.emplace_back();}
+        void operator --() { scopes.pop_back();}
+};
+
+namespace yy{ conj_parser::symbol_type yylex(lexcontext& ctx); }
+
+#define M(x) std::move(x)
+#define C(x) expression(x)
+
+
+#line 91 "conj.tab.c"
+
+
+#ifndef YY_
+# if defined YYENABLE_NLS && YYENABLE_NLS
+#  if ENABLE_NLS
+#   include <libintl.h> // FIXME: INFRINGES ON USER NAME SPACE.
+#   define YY_(msgid) dgettext ("bison-runtime", msgid)
+#  endif
+# endif
+# ifndef YY_
+#  define YY_(msgid) msgid
+# endif
+#endif
+
+
+// Whether we are compiled with exception support.
+#ifndef YY_EXCEPTIONS
+# if defined __GNUC__ && !defined __EXCEPTIONS
+#  define YY_EXCEPTIONS 0
+# else
+#  define YY_EXCEPTIONS 1
+# endif
+#endif
+
+#define YYRHSLOC(Rhs, K) ((Rhs)[K].location)
+/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
+   If N is 0, then set CURRENT to the empty location which ends
+   the previous symbol: RHS[0] (always defined).  */
+
+# ifndef YYLLOC_DEFAULT
+#  define YYLLOC_DEFAULT(Current, Rhs, N)                               \
+    do                                                                  \
+      if (N)                                                            \
+        {                                                               \
+          (Current).begin  = YYRHSLOC (Rhs, 1).begin;                   \
+          (Current).end    = YYRHSLOC (Rhs, N).end;                     \
+        }                                                               \
+      else                                                              \
+        {                                                               \
+          (Current).begin = (Current).end = YYRHSLOC (Rhs, 0).end;      \
+        }                                                               \
+    while (false)
+# endif
+
+
+// Enable debugging if requested.
+#if YYDEBUG
+
+// A pseudo ostream that takes yydebug_ into account.
+# define YYCDEBUG if (yydebug_) (*yycdebug_)
+
+# define YY_SYMBOL_PRINT(Title, Symbol)         \
+  do {                                          \
+    if (yydebug_)                               \
+    {                                           \
+      *yycdebug_ << Title << ' ';               \
+      yy_print_ (*yycdebug_, Symbol);           \
+      *yycdebug_ << '\n';                       \
+    }                                           \
+  } while (false)
+
+# define YY_REDUCE_PRINT(Rule)          \
+  do {                                  \
+    if (yydebug_)                       \
+      yy_reduce_print_ (Rule);          \
+  } while (false)
+
+# define YY_STACK_PRINT()               \
+  do {                                  \
+    if (yydebug_)                       \
+      yy_stack_print_ ();                \
+  } while (false)
+
+#else // !YYDEBUG
+
+# define YYCDEBUG if (false) std::cerr
+# define YY_SYMBOL_PRINT(Title, Symbol)  YY_USE (Symbol)
+# define YY_REDUCE_PRINT(Rule)           static_cast<void> (0)
+# define YY_STACK_PRINT()                static_cast<void> (0)
+
+#endif // !YYDEBUG
+
+#define yyerrok         (yyerrstatus_ = 0)
+#define yyclearin       (yyla.clear ())
+
+#define YYACCEPT        goto yyacceptlab
+#define YYABORT         goto yyabortlab
+#define YYERROR         goto yyerrorlab
+#define YYRECOVERING()  (!!yyerrstatus_)
+
+namespace yy {
+#line 183 "conj.tab.c"
+
+  /// Build a parser object.
+  conj_parser::conj_parser (lexcontext& ctx_yyarg)
+#if YYDEBUG
+    : yydebug_ (false),
+      yycdebug_ (&std::cerr),
+#else
+    :
+#endif
+      ctx (ctx_yyarg)
+  {}
+
+  conj_parser::~conj_parser ()
+  {}
+
+  conj_parser::syntax_error::~syntax_error () YY_NOEXCEPT YY_NOTHROW
+  {}
+
+  /*---------.
+  | symbol.  |
+  `---------*/
+
+
+
+  // by_state.
+  conj_parser::by_state::by_state () YY_NOEXCEPT
+    : state (empty_state)
+  {}
+
+  conj_parser::by_state::by_state (const by_state& that) YY_NOEXCEPT
+    : state (that.state)
+  {}
+
+  void
+  conj_parser::by_state::clear () YY_NOEXCEPT
+  {
+    state = empty_state;
+  }
+
+  void
+  conj_parser::by_state::move (by_state& that)
+  {
+    state = that.state;
+    that.clear ();
+  }
+
+  conj_parser::by_state::by_state (state_type s) YY_NOEXCEPT
+    : state (s)
+  {}
+
+  conj_parser::symbol_kind_type
+  conj_parser::by_state::kind () const YY_NOEXCEPT
+  {
+    if (state == empty_state)
+      return symbol_kind::S_YYEMPTY;
+    else
+      return YY_CAST (symbol_kind_type, yystos_[+state]);
+  }
+
+  conj_parser::stack_symbol_type::stack_symbol_type ()
+  {}
+
+  conj_parser::stack_symbol_type::stack_symbol_type (YY_RVREF (stack_symbol_type) that)
+    : super_type (YY_MOVE (that.state), YY_MOVE (that.location))
+  {
+    switch (that.kind ())
+    {
+      case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_com_stmt: // com_stmt
+      case symbol_kind::S_var_defs: // var_defs
+      case symbol_kind::S_var_def1: // var_def1
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_c_expr1: // c_expr1
+      case symbol_kind::S_expr: // expr
+        value.YY_MOVE_OR_COPY< expression > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_NUMCONST: // NUMCONST
+        value.YY_MOVE_OR_COPY< long > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_STRINGCONST: // STRINGCONST
+        value.YY_MOVE_OR_COPY< std::string > (YY_MOVE (that.value));
+        break;
+
+      default:
+        break;
+    }
+
+#if 201103L <= YY_CPLUSPLUS
+    // that is emptied.
+    that.state = empty_state;
+#endif
+  }
+
+  conj_parser::stack_symbol_type::stack_symbol_type (state_type s, YY_MOVE_REF (symbol_type) that)
+    : super_type (s, YY_MOVE (that.location))
+  {
+    switch (that.kind ())
+    {
+      case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_com_stmt: // com_stmt
+      case symbol_kind::S_var_defs: // var_defs
+      case symbol_kind::S_var_def1: // var_def1
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_c_expr1: // c_expr1
+      case symbol_kind::S_expr: // expr
+        value.move< expression > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_NUMCONST: // NUMCONST
+        value.move< long > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_STRINGCONST: // STRINGCONST
+        value.move< std::string > (YY_MOVE (that.value));
+        break;
+
+      default:
+        break;
+    }
+
+    // that is emptied.
+    that.kind_ = symbol_kind::S_YYEMPTY;
+  }
+
+#if YY_CPLUSPLUS < 201103L
+  conj_parser::stack_symbol_type&
+  conj_parser::stack_symbol_type::operator= (const stack_symbol_type& that)
+  {
+    state = that.state;
+    switch (that.kind ())
+    {
+      case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_com_stmt: // com_stmt
+      case symbol_kind::S_var_defs: // var_defs
+      case symbol_kind::S_var_def1: // var_def1
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_c_expr1: // c_expr1
+      case symbol_kind::S_expr: // expr
+        value.copy< expression > (that.value);
+        break;
+
+      case symbol_kind::S_NUMCONST: // NUMCONST
+        value.copy< long > (that.value);
+        break;
+
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_STRINGCONST: // STRINGCONST
+        value.copy< std::string > (that.value);
+        break;
+
+      default:
+        break;
+    }
+
+    location = that.location;
+    return *this;
+  }
+
+  conj_parser::stack_symbol_type&
+  conj_parser::stack_symbol_type::operator= (stack_symbol_type& that)
+  {
+    state = that.state;
+    switch (that.kind ())
+    {
+      case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_com_stmt: // com_stmt
+      case symbol_kind::S_var_defs: // var_defs
+      case symbol_kind::S_var_def1: // var_def1
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_c_expr1: // c_expr1
+      case symbol_kind::S_expr: // expr
+        value.move< expression > (that.value);
+        break;
+
+      case symbol_kind::S_NUMCONST: // NUMCONST
+        value.move< long > (that.value);
+        break;
+
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_STRINGCONST: // STRINGCONST
+        value.move< std::string > (that.value);
+        break;
+
+      default:
+        break;
+    }
+
+    location = that.location;
+    // that is emptied.
+    that.state = empty_state;
+    return *this;
+  }
+#endif
+
+  template <typename Base>
+  void
+  conj_parser::yy_destroy_ (const char* yymsg, basic_symbol<Base>& yysym) const
+  {
+    if (yymsg)
+      YY_SYMBOL_PRINT (yymsg, yysym);
+  }
+
+#if YYDEBUG
+  template <typename Base>
+  void
+  conj_parser::yy_print_ (std::ostream& yyo, const basic_symbol<Base>& yysym) const
+  {
+    std::ostream& yyoutput = yyo;
+    YY_USE (yyoutput);
+    if (yysym.empty ())
+      yyo << "empty symbol";
+    else
+      {
+        symbol_kind_type yykind = yysym.kind ();
+        yyo << (yykind < YYNTOKENS ? "token" : "nterm")
+            << ' ' << yysym.name () << " ("
+            << yysym.location << ": ";
+        YY_USE (yykind);
+        yyo << ')';
+      }
+  }
+#endif
+
+  void
+  conj_parser::yypush_ (const char* m, YY_MOVE_REF (stack_symbol_type) sym)
+  {
+    if (m)
+      YY_SYMBOL_PRINT (m, sym);
+    yystack_.push (YY_MOVE (sym));
+  }
+
+  void
+  conj_parser::yypush_ (const char* m, state_type s, YY_MOVE_REF (symbol_type) sym)
+  {
+#if 201103L <= YY_CPLUSPLUS
+    yypush_ (m, stack_symbol_type (s, std::move (sym)));
+#else
+    stack_symbol_type ss (s, sym);
+    yypush_ (m, ss);
+#endif
+  }
+
+  void
+  conj_parser::yypop_ (int n) YY_NOEXCEPT
+  {
+    yystack_.pop (n);
+  }
+
+#if YYDEBUG
+  std::ostream&
+  conj_parser::debug_stream () const
+  {
+    return *yycdebug_;
+  }
+
+  void
+  conj_parser::set_debug_stream (std::ostream& o)
+  {
+    yycdebug_ = &o;
+  }
+
+
+  conj_parser::debug_level_type
+  conj_parser::debug_level () const
+  {
+    return yydebug_;
+  }
+
+  void
+  conj_parser::set_debug_level (debug_level_type l)
+  {
+    yydebug_ = l;
+  }
+#endif // YYDEBUG
+
+  conj_parser::state_type
+  conj_parser::yy_lr_goto_state_ (state_type yystate, int yysym)
+  {
+    int yyr = yypgoto_[yysym - YYNTOKENS] + yystate;
+    if (0 <= yyr && yyr <= yylast_ && yycheck_[yyr] == yystate)
+      return yytable_[yyr];
+    else
+      return yydefgoto_[yysym - YYNTOKENS];
+  }
+
+  bool
+  conj_parser::yy_pact_value_is_default_ (int yyvalue) YY_NOEXCEPT
+  {
+    return yyvalue == yypact_ninf_;
+  }
+
+  bool
+  conj_parser::yy_table_value_is_error_ (int yyvalue) YY_NOEXCEPT
+  {
+    return yyvalue == yytable_ninf_;
+  }
+
+  int
+  conj_parser::operator() ()
+  {
+    return parse ();
+  }
+
+  int
+  conj_parser::parse ()
+  {
+    int yyn;
+    /// Length of the RHS of the rule being reduced.
+    int yylen = 0;
+
+    // Error handling.
+    int yynerrs_ = 0;
+    int yyerrstatus_ = 0;
+
+    /// The lookahead symbol.
+    symbol_type yyla;
+
+    /// The locations where the error started and ended.
+    stack_symbol_type yyerror_range[3];
+
+    /// The return value of parse ().
+    int yyresult;
+
+#if YY_EXCEPTIONS
+    try
+#endif // YY_EXCEPTIONS
+      {
+    YYCDEBUG << "Starting parse\n";
+
+
+    /* Initialize the stack.  The initial state will be set in
+       yynewstate, since the latter expects the semantical and the
+       location values to have been already stored, initialize these
+       stacks with a primary value.  */
+    yystack_.clear ();
+    yypush_ (YY_NULLPTR, 0, YY_MOVE (yyla));
+
+  /*-----------------------------------------------.
+  | yynewstate -- push a new symbol on the stack.  |
+  `-----------------------------------------------*/
+  yynewstate:
+    YYCDEBUG << "Entering state " << int (yystack_[0].state) << '\n';
+    YY_STACK_PRINT ();
+
+    // Accept?
+    if (yystack_[0].state == yyfinal_)
+      YYACCEPT;
+
+    goto yybackup;
+
+
+  /*-----------.
+  | yybackup.  |
+  `-----------*/
+  yybackup:
+    // Try to take a decision without lookahead.
+    yyn = yypact_[+yystack_[0].state];
+    if (yy_pact_value_is_default_ (yyn))
+      goto yydefault;
+
+    // Read a lookahead token.
+    if (yyla.empty ())
+      {
+        YYCDEBUG << "Reading a token\n";
+#if YY_EXCEPTIONS
+        try
+#endif // YY_EXCEPTIONS
+          {
+            symbol_type yylookahead (yylex (ctx));
+            yyla.move (yylookahead);
+          }
+#if YY_EXCEPTIONS
+        catch (const syntax_error& yyexc)
+          {
+            YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
+            error (yyexc);
+            goto yyerrlab1;
+          }
+#endif // YY_EXCEPTIONS
+      }
+    YY_SYMBOL_PRINT ("Next token is", yyla);
+
+    if (yyla.kind () == symbol_kind::S_YYerror)
+    {
+      // The scanner already issued an error message, process directly
+      // to error recovery.  But do not keep the error token as
+      // lookahead, it is too special and may lead us to an endless
+      // loop in error recovery. */
+      yyla.kind_ = symbol_kind::S_YYUNDEF;
+      goto yyerrlab1;
+    }
+
+    /* If the proper action on seeing token YYLA.TYPE is to reduce or
+       to detect an error, take that action.  */
+    yyn += yyla.kind ();
+    if (yyn < 0 || yylast_ < yyn || yycheck_[yyn] != yyla.kind ())
+      {
+        goto yydefault;
+      }
+
+    // Reduce or error.
+    yyn = yytable_[yyn];
+    if (yyn <= 0)
+      {
+        if (yy_table_value_is_error_ (yyn))
+          goto yyerrlab;
+        yyn = -yyn;
+        goto yyreduce;
+      }
+
+    // Count tokens shifted since error; after three, turn off error status.
+    if (yyerrstatus_)
+      --yyerrstatus_;
+
+    // Shift the lookahead token.
+    yypush_ ("Shifting", state_type (yyn), YY_MOVE (yyla));
+    goto yynewstate;
+
+
+  /*-----------------------------------------------------------.
+  | yydefault -- do the default action for the current state.  |
+  `-----------------------------------------------------------*/
+  yydefault:
+    yyn = yydefact_[+yystack_[0].state];
+    if (yyn == 0)
+      goto yyerrlab;
+    goto yyreduce;
+
+
+  /*-----------------------------.
+  | yyreduce -- do a reduction.  |
+  `-----------------------------*/
+  yyreduce:
+    yylen = yyr2_[yyn];
+    {
+      stack_symbol_type yylhs;
+      yylhs.state = yy_lr_goto_state_ (yystack_[yylen].state, yyr1_[yyn]);
+      /* Variants are always initialized to an empty instance of the
+         correct type. The default '$$ = $1' action is NOT applied
+         when using variants.  */
+      switch (yyr1_[yyn])
+    {
+      case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_com_stmt: // com_stmt
+      case symbol_kind::S_var_defs: // var_defs
+      case symbol_kind::S_var_def1: // var_def1
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_c_expr1: // c_expr1
+      case symbol_kind::S_expr: // expr
+        yylhs.value.emplace< expression > ();
+        break;
+
+      case symbol_kind::S_NUMCONST: // NUMCONST
+        yylhs.value.emplace< long > ();
+        break;
+
+      case symbol_kind::S_IDENTIFIER: // IDENTIFIER
+      case symbol_kind::S_STRINGCONST: // STRINGCONST
+        yylhs.value.emplace< std::string > ();
+        break;
+
+      default:
+        break;
+    }
+
+
+      // Default location.
+      {
+        stack_type::slice range (yystack_, yylen);
+        YYLLOC_DEFAULT (yylhs.location, range, yylen);
+        yyerror_range[1].location = yylhs.location;
+      }
+
+      // Perform the reduction.
+      YY_REDUCE_PRINT (yyn);
+#if YY_EXCEPTIONS
+      try
+#endif // YY_EXCEPTIONS
+        {
+          switch (yyn)
+            {
+  case 2: // $@1: %empty
+#line 147 "conj.y"
+            { ++ctx; }
+#line 672 "conj.tab.c"
+    break;
+
+  case 3: // library: $@1 functions
+#line 147 "conj.y"
+                                 { ++ctx; }
+#line 678 "conj.tab.c"
+    break;
+
+  case 4: // $@2: %empty
+#line 148 "conj.y"
+                                 {ctx.defun(yystack_[0].value.as < std::string > ()); ++ctx; }
+#line 684 "conj.tab.c"
+    break;
+
+  case 5: // functions: functions IDENTIFIER $@2 paramdecls ':' stmt
+#line 148 "conj.y"
+                                                                              {ctx.add_function(M(yystack_[4].value.as < std::string > ()), M(yystack_[0].value.as < expression > ())); --ctx; }
+#line 690 "conj.tab.c"
+    break;
+
+  case 9: // paramdecl: paramdecl ',' IDENTIFIER
+#line 152 "conj.y"
+                                            {ctx.defparm(yystack_[0].value.as < std::string > ()); }
+#line 696 "conj.tab.c"
+    break;
+
+  case 10: // paramdecl: IDENTIFIER
+#line 153 "conj.y"
+                                            {ctx.defparm(yystack_[0].value.as < std::string > ()); }
+#line 702 "conj.tab.c"
+    break;
+
+  case 11: // stmt: com_stmt '}'
+#line 154 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); --ctx; }
+#line 708 "conj.tab.c"
+    break;
+
+  case 12: // stmt: "if" '(' exprs ')' stmt
+#line 155 "conj.y"
+                                            {yylhs.value.as < expression > () = e_cand(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
+#line 714 "conj.tab.c"
+    break;
+
+  case 13: // stmt: "while" '(' exprs ')' stmt
+#line 156 "conj.y"
+                                            {yylhs.value.as < expression > () = e_loop(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
+#line 720 "conj.tab.c"
+    break;
+
+  case 14: // stmt: "return" exprs ';'
+#line 157 "conj.y"
+                                            {yylhs.value.as < expression > () = e_ret(M(yystack_[1].value.as < expression > ())); }
+#line 726 "conj.tab.c"
+    break;
+
+  case 15: // stmt: exprs ';'
+#line 158 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); }
+#line 732 "conj.tab.c"
+    break;
+
+  case 16: // stmt: ';'
+#line 159 "conj.y"
+                                            { }
+#line 738 "conj.tab.c"
+    break;
+
+  case 17: // com_stmt: '{'
+#line 160 "conj.y"
+                                            {yylhs.value.as < expression > () = e_comma(); ++ctx; }
+#line 744 "conj.tab.c"
+    break;
+
+  case 18: // com_stmt: com_stmt stmt
+#line 161 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
+#line 750 "conj.tab.c"
+    break;
+
+  case 19: // var_defs: "var" var_def1
+#line 162 "conj.y"
+                                            {yylhs.value.as < expression > () = e_comma(M(yystack_[0].value.as < expression > ())); }
+#line 756 "conj.tab.c"
+    break;
+
+  case 20: // var_defs: var_defs ',' var_def1
+#line 163 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
+#line 762 "conj.tab.c"
+    break;
+
+  case 21: // var_def1: IDENTIFIER '=' expr
+#line 164 "conj.y"
+                                            {yylhs.value.as < expression > () = ctx.def(yystack_[2].value.as < std::string > ()) %= M(yystack_[0].value.as < expression > ());}
+#line 768 "conj.tab.c"
+    break;
+
+  case 22: // var_def1: IDENTIFIER
+#line 165 "conj.y"
+                                            {yylhs.value.as < expression > () = ctx.def(yystack_[0].value.as < std::string > ()) %= 0l;}
+#line 774 "conj.tab.c"
+    break;
+
+  case 23: // exprs: var_defs
+#line 166 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
+#line 780 "conj.tab.c"
+    break;
+
+  case 24: // exprs: expr
+#line 167 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
+#line 786 "conj.tab.c"
+    break;
+
+  case 25: // exprs: expr ',' c_expr1
+#line 168 "conj.y"
+                                            {yylhs.value.as < expression > () = e_comma(M(yystack_[2].value.as < expression > ())); yylhs.value.as < expression > ().params.splice(yylhs.value.as < expression > ().params.end(), M(yystack_[0].value.as < expression > ().params)); }
+#line 792 "conj.tab.c"
+    break;
+
+  case 26: // c_expr1: expr
+#line 169 "conj.y"
+                                            {yylhs.value.as < expression > () = e_comma(M(yystack_[0].value.as < expression > ())); }
+#line 798 "conj.tab.c"
+    break;
+
+  case 27: // c_expr1: c_expr1 ',' expr
+#line 170 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
+#line 804 "conj.tab.c"
+    break;
+
+  case 28: // expr: NUMCONST
+#line 171 "conj.y"
+                                            {yylhs.value.as < expression > () = yystack_[0].value.as < long > ();}
+#line 810 "conj.tab.c"
+    break;
+
+  case 29: // expr: STRINGCONST
+#line 172 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[0].value.as < std::string > ());}
+#line 816 "conj.tab.c"
+    break;
+
+  case 30: // expr: IDENTIFIER
+#line 173 "conj.y"
+                                            {yylhs.value.as < expression > () = ctx.use(yystack_[0].value.as < std::string > ());}
+#line 822 "conj.tab.c"
+    break;
+
+  case 31: // expr: '(' expr ')'
+#line 174 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ());}
+#line 828 "conj.tab.c"
+    break;
+
+  case 32: // expr: expr '[' exprs ']'
+#line 175 "conj.y"
+                                            {yylhs.value.as < expression > () = e_deref(e_add(M(yystack_[3].value.as < expression > ()), M(yystack_[1].value.as < expression > ()))); }
+#line 834 "conj.tab.c"
+    break;
+
+  case 33: // expr: expr '(' ')'
+#line 176 "conj.y"
+                                            {yylhs.value.as < expression > () = e_fcall(M(yystack_[2].value.as < expression > ()));}
+#line 840 "conj.tab.c"
+    break;
+
+  case 34: // expr: expr '(' c_expr1 ')'
+#line 177 "conj.y"
+                                            {yylhs.value.as < expression > () = e_fcall(M(yystack_[3].value.as < expression > ())); yylhs.value.as < expression > ().params.splice(yylhs.value.as < expression > ().params.end(), M(yystack_[1].value.as < expression > ().params)); }
+#line 846 "conj.tab.c"
+    break;
+
+  case 35: // expr: expr '=' expr
+#line 178 "conj.y"
+                                            {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ())%= M(yystack_[0].value.as < expression > ()); }
+#line 852 "conj.tab.c"
+    break;
+
+  case 36: // expr: expr '+' expr
+#line 179 "conj.y"
+                                            {yylhs.value.as < expression > () = e_add(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
+#line 858 "conj.tab.c"
+    break;
+
+  case 37: // expr: expr '-' expr
+#line 180 "conj.y"
+                                            {yylhs.value.as < expression > () = e_add(M(yystack_[2].value.as < expression > ()), e_neg(M(yystack_[0].value.as < expression > ()))); }
+#line 864 "conj.tab.c"
+    break;
+
+  case 38: // expr: expr "+=" expr
+#line 181 "conj.y"
+                                            { if(!yystack_[0].value.as < expression > ().is_pure()){yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[2].value.as < expression > ())); yystack_[2].value.as < expression > ()= e_deref(yylhs.value.as < expression > ().params.back());}
+                                             yylhs.value.as < expression > () = e_comma (M(yylhs.value.as < expression > ()), M(yystack_[2].value.as < expression > ()) %= e_add(C(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()))); }
+#line 871 "conj.tab.c"
+    break;
+
+  case 39: // expr: expr "-=" expr
+#line 183 "conj.y"
+                                            { if(!yystack_[0].value.as < expression > ().is_pure()){yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[2].value.as < expression > ())); yystack_[2].value.as < expression > ()= e_deref(yylhs.value.as < expression > ().params.back());}
+                                             yylhs.value.as < expression > () = e_comma (M(yylhs.value.as < expression > ()), M(yystack_[2].value.as < expression > ()) %= e_add(C(yystack_[2].value.as < expression > ()), e_neg(M(yystack_[0].value.as < expression > ())))); }
+#line 878 "conj.tab.c"
+    break;
+
+  case 40: // expr: expr "++"
+#line 185 "conj.y"
+                                            { if(!yystack_[1].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[1].value.as < expression > ())); yystack_[1].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
+                                             yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), M(yystack_[1].value.as < expression > ())%=e_add(C(yystack_[1].value.as < expression > ()), 1l)); }
+#line 885 "conj.tab.c"
+    break;
+
+  case 41: // expr: expr "--"
+#line 187 "conj.y"
+                                            { if(!yystack_[1].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[1].value.as < expression > ())); yystack_[1].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
+                                             yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), M(yystack_[1].value.as < expression > ())%=e_add(C(yystack_[1].value.as < expression > ()), -1l)); }
+#line 892 "conj.tab.c"
+    break;
+
+  case 42: // expr: "++" expr
+#line 189 "conj.y"
+                                            { if(!yystack_[0].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[0].value.as < expression > ())); yystack_[0].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
+                                             auto i = ctx.temp(); yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), C(i) %= C(yystack_[0].value.as < expression > ()), C(yystack_[0].value.as < expression > ()) %= e_add(C(yystack_[0].value.as < expression > ()), 1l), C(i)); }
+#line 899 "conj.tab.c"
+    break;
+
+  case 43: // expr: "--" expr
+#line 191 "conj.y"
+                                            { if(!yystack_[0].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[0].value.as < expression > ())); yystack_[0].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
+                                             auto i = ctx.temp(); yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), C(i) %= C(yystack_[0].value.as < expression > ()), C(yystack_[0].value.as < expression > ()) %= e_add(C(yystack_[0].value.as < expression > ()), -1l), C(i)); }
+#line 906 "conj.tab.c"
+    break;
+
+  case 44: // expr: expr "||" expr
+#line 193 "conj.y"
+                                            {yylhs.value.as < expression > () = e_cor(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()));}
+#line 912 "conj.tab.c"
+    break;
+
+  case 45: // expr: expr "&&" expr
+#line 194 "conj.y"
+                                            {yylhs.value.as < expression > () = e_cand(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()));}
+#line 918 "conj.tab.c"
+    break;
+
+  case 46: // expr: expr "==" expr
+#line 195 "conj.y"
+                                            {yylhs.value.as < expression > () = e_eq( M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
+#line 924 "conj.tab.c"
+    break;
+
+  case 47: // expr: expr "!=" expr
+#line 196 "conj.y"
+                                            {yylhs.value.as < expression > () = e_eq(e_eq( M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())), 0l); }
+#line 930 "conj.tab.c"
+    break;
+
+  case 48: // expr: '&' expr
+#line 197 "conj.y"
+                                            {yylhs.value.as < expression > () = e_addrof(M(yystack_[0].value.as < expression > ())); }
+#line 936 "conj.tab.c"
+    break;
+
+  case 49: // expr: '*' expr
+#line 198 "conj.y"
+                                            {yylhs.value.as < expression > () = e_deref(M(yystack_[0].value.as < expression > ())); }
+#line 942 "conj.tab.c"
+    break;
+
+  case 50: // expr: '-' expr
+#line 199 "conj.y"
+                                            {yylhs.value.as < expression > () = e_neg(M(yystack_[0].value.as < expression > ())); }
+#line 948 "conj.tab.c"
+    break;
+
+  case 51: // expr: '!' expr
+#line 200 "conj.y"
+                                            {yylhs.value.as < expression > () = e_eq(M(yystack_[0].value.as < expression > ()), 0l); }
+#line 954 "conj.tab.c"
+    break;
+
+  case 52: // expr: expr '?' expr ':' expr
+#line 201 "conj.y"
+                                            {auto i = ctx.temp();
+                                             yylhs.value.as < expression > () = e_comma(e_cor(e_cand(M(yystack_[4].value.as < expression > ()), e_comma(C(i) %= M(yystack_[2].value.as < expression > ()), 1l)), C(i) %= M(yystack_[0].value.as < expression > ())), C(i)); }
+#line 961 "conj.tab.c"
+    break;
+
+
+#line 965 "conj.tab.c"
+
+            default:
+              break;
+            }
+        }
+#if YY_EXCEPTIONS
+      catch (const syntax_error& yyexc)
+        {
+          YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
+          error (yyexc);
+          YYERROR;
+        }
+#endif // YY_EXCEPTIONS
+      YY_SYMBOL_PRINT ("-> $$ =", yylhs);
+      yypop_ (yylen);
+      yylen = 0;
+
+      // Shift the result of the reduction.
+      yypush_ (YY_NULLPTR, YY_MOVE (yylhs));
+    }
+    goto yynewstate;
+
+
+  /*--------------------------------------.
+  | yyerrlab -- here on detecting error.  |
+  `--------------------------------------*/
+  yyerrlab:
+    // If not already recovering from an error, report this error.
+    if (!yyerrstatus_)
+      {
+        ++yynerrs_;
+        context yyctx (*this, yyla);
+        std::string msg = yysyntax_error_ (yyctx);
+        error (yyla.location, YY_MOVE (msg));
+      }
+
+
+    yyerror_range[1].location = yyla.location;
+    if (yyerrstatus_ == 3)
+      {
+        /* If just tried and failed to reuse lookahead token after an
+           error, discard it.  */
+
+        // Return failure if at end of input.
+        if (yyla.kind () == symbol_kind::S_YYEOF)
+          YYABORT;
+        else if (!yyla.empty ())
+          {
+            yy_destroy_ ("Error: discarding", yyla);
+            yyla.clear ();
+          }
+      }
+
+    // Else will try to reuse lookahead token after shifting the error token.
+    goto yyerrlab1;
+
+
+  /*---------------------------------------------------.
+  | yyerrorlab -- error raised explicitly by YYERROR.  |
+  `---------------------------------------------------*/
+  yyerrorlab:
+    /* Pacify compilers when the user code never invokes YYERROR and
+       the label yyerrorlab therefore never appears in user code.  */
+    if (false)
+      YYERROR;
+
+    /* Do not reclaim the symbols of the rule whose action triggered
+       this YYERROR.  */
+    yypop_ (yylen);
+    yylen = 0;
+    YY_STACK_PRINT ();
+    goto yyerrlab1;
+
+
+  /*-------------------------------------------------------------.
+  | yyerrlab1 -- common code for both syntax error and YYERROR.  |
+  `-------------------------------------------------------------*/
+  yyerrlab1:
+    yyerrstatus_ = 3;   // Each real token shifted decrements this.
+    // Pop stack until we find a state that shifts the error token.
+    for (;;)
+      {
+        yyn = yypact_[+yystack_[0].state];
+        if (!yy_pact_value_is_default_ (yyn))
+          {
+            yyn += symbol_kind::S_YYerror;
+            if (0 <= yyn && yyn <= yylast_
+                && yycheck_[yyn] == symbol_kind::S_YYerror)
+              {
+                yyn = yytable_[yyn];
+                if (0 < yyn)
+                  break;
+              }
+          }
+
+        // Pop the current state because it cannot handle the error token.
+        if (yystack_.size () == 1)
+          YYABORT;
+
+        yyerror_range[1].location = yystack_[0].location;
+        yy_destroy_ ("Error: popping", yystack_[0]);
+        yypop_ ();
+        YY_STACK_PRINT ();
+      }
+    {
+      stack_symbol_type error_token;
+
+      yyerror_range[2].location = yyla.location;
+      YYLLOC_DEFAULT (error_token.location, yyerror_range, 2);
+
+      // Shift the error token.
+      error_token.state = state_type (yyn);
+      yypush_ ("Shifting", YY_MOVE (error_token));
+    }
+    goto yynewstate;
+
+
+  /*-------------------------------------.
+  | yyacceptlab -- YYACCEPT comes here.  |
+  `-------------------------------------*/
+  yyacceptlab:
+    yyresult = 0;
+    goto yyreturn;
+
+
+  /*-----------------------------------.
+  | yyabortlab -- YYABORT comes here.  |
+  `-----------------------------------*/
+  yyabortlab:
+    yyresult = 1;
+    goto yyreturn;
+
+
+  /*-----------------------------------------------------.
+  | yyreturn -- parsing is finished, return the result.  |
+  `-----------------------------------------------------*/
+  yyreturn:
+    if (!yyla.empty ())
+      yy_destroy_ ("Cleanup: discarding lookahead", yyla);
+
+    /* Do not reclaim the symbols of the rule whose action triggered
+       this YYABORT or YYACCEPT.  */
+    yypop_ (yylen);
+    YY_STACK_PRINT ();
+    while (1 < yystack_.size ())
+      {
+        yy_destroy_ ("Cleanup: popping", yystack_[0]);
+        yypop_ ();
+      }
+
+    return yyresult;
+  }
+#if YY_EXCEPTIONS
+    catch (...)
+      {
+        YYCDEBUG << "Exception caught: cleaning lookahead and stack\n";
+        // Do not try to display the values of the reclaimed symbols,
+        // as their printers might throw an exception.
+        if (!yyla.empty ())
+          yy_destroy_ (YY_NULLPTR, yyla);
+
+        while (1 < yystack_.size ())
+          {
+            yy_destroy_ (YY_NULLPTR, yystack_[0]);
+            yypop_ ();
+          }
+        throw;
+      }
+#endif // YY_EXCEPTIONS
+  }
+
+  void
+  conj_parser::error (const syntax_error& yyexc)
+  {
+    error (yyexc.location, yyexc.what ());
+  }
+
+  /* Return YYSTR after stripping away unnecessary quotes and
+     backslashes, so that it's suitable for yyerror.  The heuristic is
+     that double-quoting is unnecessary unless the string contains an
+     apostrophe, a comma, or backslash (other than backslash-backslash).
+     YYSTR is taken from yytname.  */
+  std::string
+  conj_parser::yytnamerr_ (const char *yystr)
+  {
+    if (*yystr == '"')
+      {
+        std::string yyr;
+        char const *yyp = yystr;
+
+        for (;;)
+          switch (*++yyp)
+            {
+            case '\'':
+            case ',':
+              goto do_not_strip_quotes;
+
+            case '\\':
+              if (*++yyp != '\\')
+                goto do_not_strip_quotes;
+              else
+                goto append;
+
+            append:
+            default:
+              yyr += *yyp;
+              break;
+
+            case '"':
+              return yyr;
+            }
+      do_not_strip_quotes: ;
+      }
+
+    return yystr;
+  }
+
+  std::string
+  conj_parser::symbol_name (symbol_kind_type yysymbol)
+  {
+    return yytnamerr_ (yytname_[yysymbol]);
+  }
+
+
+
+  // conj_parser::context.
+  conj_parser::context::context (const conj_parser& yyparser, const symbol_type& yyla)
+    : yyparser_ (yyparser)
+    , yyla_ (yyla)
+  {}
+
+  int
+  conj_parser::context::expected_tokens (symbol_kind_type yyarg[], int yyargn) const
+  {
+    // Actual number of expected tokens
+    int yycount = 0;
+
+    const int yyn = yypact_[+yyparser_.yystack_[0].state];
+    if (!yy_pact_value_is_default_ (yyn))
+      {
+        /* Start YYX at -YYN if negative to avoid negative indexes in
+           YYCHECK.  In other words, skip the first -YYN actions for
+           this state because they are default actions.  */
+        const int yyxbegin = yyn < 0 ? -yyn : 0;
+        // Stay within bounds of both yycheck and yytname.
+        const int yychecklim = yylast_ - yyn + 1;
+        const int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
+        for (int yyx = yyxbegin; yyx < yyxend; ++yyx)
+          if (yycheck_[yyx + yyn] == yyx && yyx != symbol_kind::S_YYerror
+              && !yy_table_value_is_error_ (yytable_[yyx + yyn]))
+            {
+              if (!yyarg)
+                ++yycount;
+              else if (yycount == yyargn)
+                return 0;
+              else
+                yyarg[yycount++] = YY_CAST (symbol_kind_type, yyx);
+            }
+      }
+
+    if (yyarg && yycount == 0 && 0 < yyargn)
+      yyarg[0] = symbol_kind::S_YYEMPTY;
+    return yycount;
+  }
+
+
+
+
+
+
+  int
+  conj_parser::yy_syntax_error_arguments_ (const context& yyctx,
+                                                 symbol_kind_type yyarg[], int yyargn) const
+  {
+    /* There are many possibilities here to consider:
+       - If this state is a consistent state with a default action, then
+         the only way this function was invoked is if the default action
+         is an error action.  In that case, don't check for expected
+         tokens because there are none.
+       - The only way there can be no lookahead present (in yyla) is
+         if this state is a consistent state with a default action.
+         Thus, detecting the absence of a lookahead is sufficient to
+         determine that there is no unexpected or expected token to
+         report.  In that case, just report a simple "syntax error".
+       - Don't assume there isn't a lookahead just because this state is
+         a consistent state with a default action.  There might have
+         been a previous inconsistent state, consistent state with a
+         non-default action, or user semantic action that manipulated
+         yyla.  (However, yyla is currently not documented for users.)
+       - Of course, the expected token list depends on states to have
+         correct lookahead information, and it depends on the parser not
+         to perform extra reductions after fetching a lookahead from the
+         scanner and before detecting a syntax error.  Thus, state merging
+         (from LALR or IELR) and default reductions corrupt the expected
+         token list.  However, the list is correct for canonical LR with
+         one exception: it will still contain any token that will not be
+         accepted due to an error action in a later state.
+    */
+
+    if (!yyctx.lookahead ().empty ())
+      {
+        if (yyarg)
+          yyarg[0] = yyctx.token ();
+        int yyn = yyctx.expected_tokens (yyarg ? yyarg + 1 : yyarg, yyargn - 1);
+        return yyn + 1;
+      }
+    return 0;
+  }
+
+  // Generate an error message.
+  std::string
+  conj_parser::yysyntax_error_ (const context& yyctx) const
+  {
+    // Its maximum.
+    enum { YYARGS_MAX = 5 };
+    // Arguments of yyformat.
+    symbol_kind_type yyarg[YYARGS_MAX];
+    int yycount = yy_syntax_error_arguments_ (yyctx, yyarg, YYARGS_MAX);
+
+    char const* yyformat = YY_NULLPTR;
+    switch (yycount)
+      {
+#define YYCASE_(N, S)                         \
+        case N:                               \
+          yyformat = S;                       \
+        break
+      default: // Avoid compiler warnings.
+        YYCASE_ (0, YY_("syntax error"));
+        YYCASE_ (1, YY_("syntax error, unexpected %s"));
+        YYCASE_ (2, YY_("syntax error, unexpected %s, expecting %s"));
+        YYCASE_ (3, YY_("syntax error, unexpected %s, expecting %s or %s"));
+        YYCASE_ (4, YY_("syntax error, unexpected %s, expecting %s or %s or %s"));
+        YYCASE_ (5, YY_("syntax error, unexpected %s, expecting %s or %s or %s or %s"));
+#undef YYCASE_
+      }
+
+    std::string yyres;
+    // Argument number.
+    std::ptrdiff_t yyi = 0;
+    for (char const* yyp = yyformat; *yyp; ++yyp)
+      if (yyp[0] == '%' && yyp[1] == 's' && yyi < yycount)
+        {
+          yyres += symbol_name (yyarg[yyi++]);
+          ++yyp;
+        }
+      else
+        yyres += *yyp;
+    return yyres;
+  }
+
+
+  const signed char conj_parser::yypact_ninf_ = -24;
+
+  const signed char conj_parser::yytable_ninf_ = -1;
+
+  const short
+  conj_parser::yypact_[] =
+  {
+     -24,     7,   -24,   -24,     8,   -24,     9,   -24,    -6,     1,
+      83,    13,     3,    -3,    -1,    14,   -24,   -24,   -24,   119,
+     119,   119,   119,   119,   119,   -24,   -24,   119,   -24,    52,
+      12,     5,   163,   -24,    17,     3,     3,    27,   -24,   219,
+     219,   219,   219,   219,   143,   219,   -24,   -24,    14,   -24,
+     119,   119,   119,   119,   -24,   -24,   119,   119,   119,   119,
+     119,   119,   119,    96,     3,   -24,    21,    22,   119,   -24,
+     -24,   124,   215,   209,   209,   199,   199,    34,   199,   181,
+     199,   219,   219,   -24,    -5,    30,    83,    83,   199,   119,
+     119,   -24,   -24,   -24,   -24,   199,   199
+  };
+
+  const signed char
+  conj_parser::yydefact_[] =
+  {
+       2,     0,     6,     1,     3,     4,     8,    10,     0,     7,
+       0,     0,     0,     0,     0,     0,    30,    28,    29,     0,
+       0,     0,     0,     0,     0,    16,    17,     0,     5,     0,
+      23,     0,    24,     9,     0,     0,     0,    22,    19,    42,
+      43,    50,    49,    48,     0,    51,    11,    18,     0,    15,
+       0,     0,     0,     0,    40,    41,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,    14,     0,     0,     0,    31,
+      20,    44,    45,    46,    47,    38,    39,    25,    26,     0,
+      35,    36,    37,    33,     0,     0,     0,     0,    21,     0,
+       0,    34,    32,    13,    12,    27,    52
+  };
+
+  const signed char
+  conj_parser::yypgoto_[] =
+  {
+     -24,   -24,   -24,   -24,   -24,   -24,   -24,   -23,   -24,   -24,
+       6,    10,   -10,   -19
+  };
+
+  const signed char
+  conj_parser::yydefgoto_[] =
+  {
+       0,     1,     2,     4,     6,     8,     9,    28,    29,    30,
+      38,    31,    77,    32
+  };
+
+  const signed char
+  conj_parser::yytable_[] =
+  {
+      39,    40,    41,    42,    43,    44,    47,     3,    45,    15,
+      16,    17,    18,    89,    10,     5,     7,    19,    20,    11,
+      33,    37,    34,    35,    91,    36,    21,    22,    23,    24,
+      48,    71,    72,    73,    74,    49,    27,    75,    76,    78,
+      79,    80,    81,    82,    78,    66,    67,    65,    68,    88,
+      86,    87,    89,    84,    70,    12,    13,    14,    15,    16,
+      17,    18,    92,    93,    94,     0,    19,    20,     0,     0,
+      95,    96,     0,     0,    85,    21,    22,    23,    24,     0,
+      46,     0,    25,    26,     0,    27,    12,    13,    14,    15,
+      16,    17,    18,     0,     0,     0,     0,    19,    20,     0,
+       0,     0,     0,    16,    17,    18,    21,    22,    23,    24,
+      19,    20,     0,    25,    26,     0,    27,     0,     0,    21,
+      22,    23,    24,     0,     0,    83,    16,    17,    18,    27,
+       0,     0,     0,    19,    20,    51,    52,    53,    54,    55,
+       0,     0,    21,    22,    23,    24,    61,    62,     0,     0,
+      63,    64,    27,    50,    51,    52,    53,    54,    55,    56,
+      57,     0,    59,     0,    60,    61,    62,     0,     0,    63,
+      64,     0,    69,    50,    51,    52,    53,    54,    55,    56,
+      57,    58,    59,     0,    60,    61,    62,     0,     0,    63,
+      64,    50,    51,    52,    53,    54,    55,    56,    57,     0,
+      59,    90,    60,    61,    62,     0,     0,    63,    64,    50,
+      51,    52,    53,    54,    55,    56,    57,     0,    59,     0,
+      60,    61,    62,    54,    55,    63,    64,    52,    53,    54,
+      55,    61,    62,    54,    55,    63,    64,    61,    62,     0,
+       0,    63,    64,     0,     0,    63,    64
+  };
+
+  const signed char
+  conj_parser::yycheck_[] =
+  {
+      19,    20,    21,    22,    23,    24,    29,     0,    27,     6,
+       7,     8,     9,    18,    20,     7,     7,    14,    15,    18,
+       7,     7,    12,    26,    29,    26,    23,    24,    25,    26,
+      18,    50,    51,    52,    53,    30,    33,    56,    57,    58,
+      59,    60,    61,    62,    63,    35,    36,    30,    21,    68,
+      29,    29,    18,    63,    48,     3,     4,     5,     6,     7,
+       8,     9,    32,    86,    87,    -1,    14,    15,    -1,    -1,
+      89,    90,    -1,    -1,    64,    23,    24,    25,    26,    -1,
+      28,    -1,    30,    31,    -1,    33,     3,     4,     5,     6,
+       7,     8,     9,    -1,    -1,    -1,    -1,    14,    15,    -1,
+      -1,    -1,    -1,     7,     8,     9,    23,    24,    25,    26,
+      14,    15,    -1,    30,    31,    -1,    33,    -1,    -1,    23,
+      24,    25,    26,    -1,    -1,    29,     7,     8,     9,    33,
+      -1,    -1,    -1,    14,    15,    11,    12,    13,    14,    15,
+      -1,    -1,    23,    24,    25,    26,    22,    23,    -1,    -1,
+      26,    27,    33,    10,    11,    12,    13,    14,    15,    16,
+      17,    -1,    19,    -1,    21,    22,    23,    -1,    -1,    26,
+      27,    -1,    29,    10,    11,    12,    13,    14,    15,    16,
+      17,    18,    19,    -1,    21,    22,    23,    -1,    -1,    26,
+      27,    10,    11,    12,    13,    14,    15,    16,    17,    -1,
+      19,    20,    21,    22,    23,    -1,    -1,    26,    27,    10,
+      11,    12,    13,    14,    15,    16,    17,    -1,    19,    -1,
+      21,    22,    23,    14,    15,    26,    27,    12,    13,    14,
+      15,    22,    23,    14,    15,    26,    27,    22,    23,    -1,
+      -1,    26,    27,    -1,    -1,    26,    27
+  };
+
+  const signed char
+  conj_parser::yystos_[] =
+  {
+       0,    35,    36,     0,    37,     7,    38,     7,    39,    40,
+      20,    18,     3,     4,     5,     6,     7,     8,     9,    14,
+      15,    23,    24,    25,    26,    30,    31,    33,    41,    42,
+      43,    45,    47,     7,    45,    26,    26,     7,    44,    47,
+      47,    47,    47,    47,    47,    47,    28,    41,    18,    30,
+      10,    11,    12,    13,    14,    15,    16,    17,    18,    19,
+      21,    22,    23,    26,    27,    30,    45,    45,    21,    29,
+      44,    47,    47,    47,    47,    47,    47,    46,    47,    47,
+      47,    47,    47,    29,    46,    45,    29,    29,    47,    18,
+      20,    29,    32,    41,    41,    47,    47
+  };
+
+  const signed char
+  conj_parser::yyr1_[] =
+  {
+       0,    34,    36,    35,    38,    37,    37,    39,    39,    40,
+      40,    41,    41,    41,    41,    41,    41,    42,    42,    43,
+      43,    44,    44,    45,    45,    45,    46,    46,    47,    47,
+      47,    47,    47,    47,    47,    47,    47,    47,    47,    47,
+      47,    47,    47,    47,    47,    47,    47,    47,    47,    47,
+      47,    47,    47
+  };
+
+  const signed char
+  conj_parser::yyr2_[] =
+  {
+       0,     2,     0,     2,     0,     6,     0,     1,     0,     3,
+       1,     2,     5,     5,     3,     2,     1,     1,     2,     2,
+       3,     3,     1,     1,     1,     3,     1,     3,     1,     1,
+       1,     3,     4,     3,     4,     3,     3,     3,     3,     3,
+       2,     2,     2,     2,     3,     3,     3,     3,     2,     2,
+       2,     2,     5
+  };
+
+
+#if YYDEBUG || 1
+  // YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
+  // First, the terminals, then, starting at \a YYNTOKENS, nonterminals.
+  const char*
+  const conj_parser::yytname_[] =
+  {
+  "END", "error", "\"invalid token\"", "\"return\"", "\"while\"",
+  "\"if\"", "\"var\"", "IDENTIFIER", "NUMCONST", "STRINGCONST", "\"||\"",
+  "\"&&\"", "\"==\"", "\"!=\"", "\"++\"", "\"--\"", "\"+=\"", "\"-=\"",
+  "','", "'?'", "':'", "'='", "'+'", "'-'", "'*'", "'&'", "'('", "'['",
+  "'}'", "')'", "';'", "'{'", "']'", "'!'", "$accept", "library", "$@1",
+  "functions", "$@2", "paramdecls", "paramdecl", "stmt", "com_stmt",
+  "var_defs", "var_def1", "exprs", "c_expr1", "expr", YY_NULLPTR
+  };
+#endif
+
+
+#if YYDEBUG
+  const unsigned char
+  conj_parser::yyrline_[] =
+  {
+       0,   147,   147,   147,   148,   148,   149,   150,   151,   152,
+     153,   154,   155,   156,   157,   158,   159,   160,   161,   162,
+     163,   164,   165,   166,   167,   168,   169,   170,   171,   172,
+     173,   174,   175,   176,   177,   178,   179,   180,   181,   183,
+     185,   187,   189,   191,   193,   194,   195,   196,   197,   198,
+     199,   200,   201
+  };
+
+  void
+  conj_parser::yy_stack_print_ () const
+  {
+    *yycdebug_ << "Stack now";
+    for (stack_type::const_iterator
+           i = yystack_.begin (),
+           i_end = yystack_.end ();
+         i != i_end; ++i)
+      *yycdebug_ << ' ' << int (i->state);
+    *yycdebug_ << '\n';
+  }
+
+  void
+  conj_parser::yy_reduce_print_ (int yyrule) const
+  {
+    int yylno = yyrline_[yyrule];
+    int yynrhs = yyr2_[yyrule];
+    // Print the symbols being reduced, and their result.
+    *yycdebug_ << "Reducing stack by rule " << yyrule - 1
+               << " (line " << yylno << "):\n";
+    // The symbols being reduced.
+    for (int yyi = 0; yyi < yynrhs; yyi++)
+      YY_SYMBOL_PRINT ("   $" << yyi + 1 << " =",
+                       yystack_[(yynrhs) - (yyi + 1)]);
+  }
+#endif // YYDEBUG
+
+
+} // yy
+#line 1521 "conj.tab.c"
+
+#line 203 "conj.y"
+
+
+yy::conj_parser::symbol_type yy::yylex(lexcontext& ctx)
+{
+    const char* anchor = ctx.cursor;
+    ctx.loc.step();
+    auto s = [&](auto func, auto&&... params) {ctx.loc.columns(ctx.cursor - anchor); return func(params..., ctx.loc); };
+%{
+    re2c:yyfill:enable = 0;
+    re2c:define:YYCTYPE = "char";
+    re2c:define:YYCURSOR = "ctx.cursor";
+    "return"            { return s(conj_parser::make_RETURN); }
+    "while" | "for"     { return s(conj_parser::make_WHILE); }
+    "var"               { return s(conj_parser::make_VAR); }
+    "if"                { return s(conj_parser::make_IF); }
+
+    [a-zA-Z_] [a-zA-Z_0-9]* { return s(conj_parser::make_IDENTIFIER, std::string(anchor, ctx.cursor)); }
+
+    "\"" [^\"]* "\""        {return s(conj_parser::make_STRINGCONST, std::string(anchor+1, ctx.cursor-1)); }
+    [0-9]+                  {return s(conj_parser::make_NUMCONST, std::stol(std::string(anchor,ctx.cursor))); }
+
+    "\000"              { return s(conj_parser::make_END); }
+    "\r\n" | [\r\n]     { ctx.loc.lines();              return yylex(ctx); }
+    "//" [^\r\n]*       { return yylex(ctx);                                }
+    [\t\v\b\f]          { ctx.loc.columns();            return yylex(ctx); }
+
+    "&&"                { return s(conj_parser::make_AND); }
+    "||"                { return s(conj_parser::make_OR); }
+    "--"                { return s(conj_parser::make_MM); }
+    "!="                { return s(conj_parser::make_NE); }
+    "++"                { return s(conj_parser::make_PP); }
+    "=="                { return s(conj_parser::make_EQ); }
+    "+="                { return s(conj_parser::make_PL_EQ); }
+    "-="                { return s(conj_parser::make_MI_EQ); }
+    .                   { return s([](auto...s){return conj_parser::symbol_type(s...);}, (conj_parser::token_type(ctx.cursor[-1]&0xFF))); }
+
+    %}  
+}
+
+void yy::con_parser::error(const yy::location_type& l, const std::string& m)
+{
+    std::cerr << (l.begin.filename ? l.begin.filename->c_str() : "(undefined)");
+    std::cerr << ';' << l.begin.line << ':' << l.begin.column << '-' << l.end.column << ": " << m << '\n'; 
+}
+#include <fstream>
+
+bool expression::is_pure() const
+{
+    for(const auto& e: params) if(!e.is_pure()) return false;
+    switch(type)
+    {
+        case ex_type::fcall:    return false;
+        case ex_type::copy:     return false;
+        case ex_type::ret:      return false;
+        case ex_type::loop:     return false;
+        default:                return true;
+    }
+}
+
+int main(int argc, char** argv)
+{
+    std::string filename = argv[1];
+    std::ifstream f(filename);
+    std::string buffer(std::istreambuf_iterator<char>(f), {});
+
+    lexcontext ctx;
+    ctx.cursor = buffer.c_str();
+    ctx.loc.begin.filename = &filename;
+    ctx.loc.end.filename = &filename;
+
+    yy::conj_parser parser(ctx);
+    parser.parse();
+    std::vector<function> func_list = std::move(ctx.func_list);
+}
