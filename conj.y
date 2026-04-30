@@ -443,10 +443,34 @@ static bool equal(const expression& a, const expression& b)
 
 static void ConstantFolding(expression& e, function& f)
 {
+    if((is_add(e) || is_comma(e) || is_cor(e) || is_cand(e)))
+    {
+        for(auto j = e.params.end(); j != e.params.begin(); )
+        if((--j)-> type == e.type)
+        {
+            auto tmp(M(j->params));
+            e.params.splice(j = e.params.erase(j), std::move(tmp));
+        }
+    }
     switch(e.type)
     {   
         case ex_type::add:
-            
+            long tmp = std::accumulate(e.params.begin(), e.params.end(), 0l,
+                                        [](long n, auto& p ) { return is_number(p) ? n + p.numvalue : n;});
+            e.params.remove_if(is_number);
+            for(auto j = e.params.begin(); j != e.params.end(); ++j)
+                if(is_neg(*j) && is_add(j->param.front()))
+                {
+                    auto tmp(std::move(j->params.front().params));
+                    for(auto& p: tmp) p = e_neg(M(p));
+                    e.params.splice(j = e.params.erase(j), std::move(tmp));
+                }
+            if(tmp != 0) e.params.push_back(tmp);
+            if(std::count_if(e.params.begin(), e.params.end(), is_neg) > long(e.params.size()/2))
+            {
+                for(auto& p: e.params) p = e_neg(M(p));
+                e = e_neg(M(e));
+            }
             break;
 
         case ex_type::neg:
@@ -469,6 +493,24 @@ static void ConstantFolding(expression& e, function& f)
             if(is_deref(e.params.front())) e = C(M(e.params.front().params.front()));
             break;
 
+        case ex_type::cand:
+        case ex_type::cor:
+        {
+            auto value_kind = is_cand(e) ? [](long v){ return v!=0; } : [] (long v){ return v==0; }
+            e.params.erase(std::remove_if(e.params.begin(), e.params.end(),
+                                          [&](expression& p) { return is_number(p) && value_kind(p.numvalue); }),
+                                          e.params.end());
+            if(auto i = std::find_if(e.params.begin(),e.params.end(),[&](const expression& p)
+                                    { return is_number(p) && !value_kind(p.numvalue); });
+                                    i != e.params.end())
+            {
+                while(i!=e.params.begin() && std::prev(i)->is_pure()) { --i; }
+                e.params.erase(i, e.params.end());
+                e = e_comma (M(e), is_cand(e) ? 0l : 1l);
+            }
+            break;
+        }
+
         case ex_type::copy;
             if(equal(e.params.front(), e.params.back()) && e.params.front().is_pure())
             e = C(M(e.params.back()));
@@ -478,8 +520,20 @@ static void ConstantFolding(expression& e, function& f)
             if(is_number(e.params.front()) &&  !e.params.front().numvalue) { e = e_nop(); break; }
             break;
 
+        case ex_type::comma:
+            
+            break;
+
         default:
             break;
+    }
+    switch(e.params.size())
+    {
+        case 1: if(is_add(e))                           e= C(M(e.params.front()));
+                else if (is_cor(e) || is_cand(e))       e = e_eq(e_eq(M(e.params.front), 0l), 0l);
+                break; 
+        case 0: if(is_add(e) || is_cor(e))              e = 0l;
+                else if(is_cand(e))                     e = 1l;
     }
 }
 
