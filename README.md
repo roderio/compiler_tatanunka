@@ -1,8 +1,8 @@
-# Conj: A Minimal Programming Language Compiler
+# Tatanunka: A Minimal Programming Language Compiler
 
 ## Overview
 
-**Conj** is a small, experimental programming language compiler and interpreter written in C++. It demonstrates core compiler construction techniques including lexical analysis, syntax parsing, semantic analysis, code generation, and optimization.
+**Tatanunka** is a small, experimental programming language compiler and interpreter written in C++. It demonstrates core compiler construction techniques including lexical analysis, syntax parsing, semantic analysis, code generation, and optimization.
 
 The project uses industry-standard tools—**re2c** for lexer generation and **Bison** (GNU yacc) for parser generation—to build a complete LALR(1) bottom-up parser that translates source code into an executable intermediate representation.
 
