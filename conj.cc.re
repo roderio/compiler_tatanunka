@@ -95,10 +95,17 @@
         expression(long v)                  :type(ex_type::number), numvalue(v) {}
 
         bool is_pure() const;
+        bool is_compiletime_expr() const;
         expression operator%=(expression&& b) && {return expression(ex_type::copy, std::move(b), std::move(*this));}
     };
 
     #define o(n)\
+    inline bool is_##n(const identifier& i){ return i.type == id_type::n;}
+    ENUM_IDENTIFIERS(o)
+    #undef o
+
+    #define o(n)\
+    inline bool is_##n(const expression& e){ return e.type == ex_type::n;} \
     template<typename... T>\
     inline expression e_##n(T&&... args) { return expression(ex_type::n, std::forward<T>(args)...); }
     ENUM_EXPRESSIONS(o)
@@ -109,11 +116,14 @@
         std::string name;
         expression code;
         unsigned num_vars = 0, num_params = 0;
+        bool     pure     = false, pure_known = false;
+
+        expression maketemp() { expression r(identifier {id_type::variable, num_vars, "$C" + std::to_string(num_vars)}); ++num_vars; return r;}
     };
 
     struct lexcontext;
 
-#line 117 "conj.cc.re"
+#line 127 "conj.cc.re"
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -253,7 +263,7 @@
 #endif
 
 namespace yy {
-#line 257 "conj.cc.re"
+#line 267 "conj.cc.re"
 
 
   /// A point in a source file.
@@ -1840,7 +1850,7 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 557,     ///< Last index in yytable_.
+      yylast_ = 541,     ///< Last index in yytable_.
       yynnts_ = 24,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
@@ -2046,7 +2056,7 @@ switch (yykind)
 
 
 } // yy
-#line 2050 "conj.cc.re"
+#line 2060 "conj.cc.re"
 
 
 
@@ -2054,7 +2064,7 @@ switch (yykind)
 
 
 // Unqualified %code blocks.
-#line 87 "conj.y"
+#line 97 "conj.y"
 
 struct lexcontext
 {
@@ -2099,7 +2109,7 @@ namespace yy{ conj_parser::symbol_type yylex(lexcontext& ctx); }
 #define C(x) expression(x)
 
 
-#line 2103 "conj.cc.re"
+#line 2113 "conj.cc.re"
 
 
 #ifndef YY_
@@ -2191,7 +2201,7 @@ namespace yy{ conj_parser::symbol_type yylex(lexcontext& ctx); }
 #define YYRECOVERING()  (!!yyerrstatus_)
 
 namespace yy {
-#line 2195 "conj.cc.re"
+#line 2205 "conj.cc.re"
 
   /// Build a parser object.
   conj_parser::conj_parser (lexcontext& ctx_yyarg)
@@ -2703,428 +2713,428 @@ namespace yy {
           switch (yyn)
             {
   case 2: // $@1: %empty
-#line 150 "conj.y"
+#line 160 "conj.y"
             { ++ctx; }
-#line 2709 "conj.cc.re"
+#line 2719 "conj.cc.re"
     break;
 
   case 3: // library: $@1 functions
-#line 150 "conj.y"
+#line 160 "conj.y"
                                  { ++ctx; }
-#line 2715 "conj.cc.re"
+#line 2725 "conj.cc.re"
     break;
 
   case 4: // $@2: %empty
-#line 151 "conj.y"
+#line 161 "conj.y"
                                   {ctx.defun(yystack_[0].value.as < std::string > ()); ++ctx; }
-#line 2721 "conj.cc.re"
+#line 2731 "conj.cc.re"
     break;
 
   case 5: // functions: functions identifier1 $@2 paramdecls colon1 stmt1
-#line 151 "conj.y"
+#line 161 "conj.y"
                                                                                    {ctx.add_function(M(yystack_[4].value.as < std::string > ()), M(yystack_[0].value.as < expression > ())); --ctx; }
-#line 2727 "conj.cc.re"
+#line 2737 "conj.cc.re"
     break;
 
   case 9: // paramdecl: paramdecl ',' identifier1
-#line 155 "conj.y"
+#line 165 "conj.y"
                                                                         {ctx.defparm(yystack_[0].value.as < std::string > ()); }
-#line 2733 "conj.cc.re"
+#line 2743 "conj.cc.re"
     break;
 
   case 10: // paramdecl: IDENTIFIER
-#line 156 "conj.y"
+#line 166 "conj.y"
                                                                         {ctx.defparm(yystack_[0].value.as < std::string > ()); }
-#line 2739 "conj.cc.re"
+#line 2749 "conj.cc.re"
     break;
 
   case 11: // identifier1: IDENTIFIER
-#line 157 "conj.y"
+#line 167 "conj.y"
                                                                         {yylhs.value.as < std::string > () = M(yystack_[0].value.as < std::string > ());}
-#line 2745 "conj.cc.re"
+#line 2755 "conj.cc.re"
     break;
 
   case 17: // stmt1: stmt
-#line 163 "conj.y"
+#line 173 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
-#line 2751 "conj.cc.re"
+#line 2761 "conj.cc.re"
     break;
 
   case 18: // exprs1: exprs
-#line 164 "conj.y"
+#line 174 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
-#line 2757 "conj.cc.re"
+#line 2767 "conj.cc.re"
     break;
 
   case 19: // expr1: expr
-#line 165 "conj.y"
+#line 175 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
-#line 2763 "conj.cc.re"
+#line 2773 "conj.cc.re"
     break;
 
   case 20: // p_expr1: '(' exprs1 cl_parens1
-#line 166 "conj.y"
+#line 176 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ());}
-#line 2769 "conj.cc.re"
+#line 2779 "conj.cc.re"
     break;
 
   case 21: // stmt: com_stmt cl_brace1
-#line 167 "conj.y"
+#line 177 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); --ctx; }
-#line 2775 "conj.cc.re"
+#line 2785 "conj.cc.re"
     break;
 
   case 22: // stmt: "if" p_expr1 stmt1
-#line 168 "conj.y"
+#line 178 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_cand(M(yystack_[1].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
-#line 2781 "conj.cc.re"
+#line 2791 "conj.cc.re"
     break;
 
   case 23: // stmt: "while" p_expr1 stmt1
-#line 169 "conj.y"
+#line 179 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_loop(M(yystack_[1].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
-#line 2787 "conj.cc.re"
+#line 2797 "conj.cc.re"
     break;
 
   case 24: // stmt: "return" exprs semicolon1
-#line 170 "conj.y"
+#line 180 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_ret(M(yystack_[1].value.as < expression > ())); }
-#line 2793 "conj.cc.re"
+#line 2803 "conj.cc.re"
     break;
 
   case 25: // stmt: exprs semicolon1
-#line 171 "conj.y"
+#line 181 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); }
-#line 2799 "conj.cc.re"
+#line 2809 "conj.cc.re"
     break;
 
   case 26: // stmt: semicolon1
-#line 172 "conj.y"
+#line 182 "conj.y"
                                                                         { }
-#line 2805 "conj.cc.re"
+#line 2815 "conj.cc.re"
     break;
 
   case 27: // com_stmt: '{'
-#line 173 "conj.y"
+#line 183 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_comma(); ++ctx; }
-#line 2811 "conj.cc.re"
+#line 2821 "conj.cc.re"
     break;
 
   case 28: // com_stmt: com_stmt stmt
-#line 174 "conj.y"
+#line 184 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
-#line 2817 "conj.cc.re"
+#line 2827 "conj.cc.re"
     break;
 
   case 29: // var_defs: "var" var_def1
-#line 175 "conj.y"
+#line 185 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_comma(M(yystack_[0].value.as < expression > ())); }
-#line 2823 "conj.cc.re"
+#line 2833 "conj.cc.re"
     break;
 
   case 30: // var_defs: var_defs ',' var_def1
-#line 176 "conj.y"
+#line 186 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
-#line 2829 "conj.cc.re"
+#line 2839 "conj.cc.re"
     break;
 
   case 31: // var_def1: identifier1 '=' expr
-#line 177 "conj.y"
+#line 187 "conj.y"
                                                                         {yylhs.value.as < expression > () = ctx.def(yystack_[2].value.as < std::string > ()) %= M(yystack_[0].value.as < expression > ());}
-#line 2835 "conj.cc.re"
+#line 2845 "conj.cc.re"
     break;
 
   case 32: // var_def1: identifier1
-#line 178 "conj.y"
+#line 188 "conj.y"
                                                                         {yylhs.value.as < expression > () = ctx.def(yystack_[0].value.as < std::string > ()) %= 0l;}
-#line 2841 "conj.cc.re"
+#line 2851 "conj.cc.re"
     break;
 
   case 33: // exprs: var_defs
-#line 179 "conj.y"
+#line 189 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
-#line 2847 "conj.cc.re"
+#line 2857 "conj.cc.re"
     break;
 
   case 34: // exprs: expr
-#line 180 "conj.y"
+#line 190 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < expression > ());}
-#line 2853 "conj.cc.re"
+#line 2863 "conj.cc.re"
     break;
 
   case 35: // exprs: expr ',' c_expr1
-#line 181 "conj.y"
+#line 191 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_comma(M(yystack_[2].value.as < expression > ())); yylhs.value.as < expression > ().params.splice(yylhs.value.as < expression > ().params.end(), M(yystack_[0].value.as < expression > ().params)); }
-#line 2859 "conj.cc.re"
+#line 2869 "conj.cc.re"
     break;
 
   case 36: // c_expr1: expr1
-#line 182 "conj.y"
+#line 192 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_comma(M(yystack_[0].value.as < expression > ())); }
-#line 2865 "conj.cc.re"
+#line 2875 "conj.cc.re"
     break;
 
   case 37: // c_expr1: c_expr1 ',' expr1
-#line 183 "conj.y"
+#line 193 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ()); yylhs.value.as < expression > ().params.push_back(M(yystack_[0].value.as < expression > ())); }
-#line 2871 "conj.cc.re"
+#line 2881 "conj.cc.re"
     break;
 
   case 38: // expr: NUMCONST
-#line 184 "conj.y"
+#line 194 "conj.y"
                                                                         {yylhs.value.as < expression > () = yystack_[0].value.as < long > ();}
-#line 2877 "conj.cc.re"
+#line 2887 "conj.cc.re"
     break;
 
   case 39: // expr: STRINGCONST
-#line 185 "conj.y"
+#line 195 "conj.y"
                                                                         {yylhs.value.as < expression > () = M(yystack_[0].value.as < std::string > ());}
-#line 2883 "conj.cc.re"
+#line 2893 "conj.cc.re"
     break;
 
   case 40: // expr: IDENTIFIER
-#line 186 "conj.y"
+#line 196 "conj.y"
                                                                         {yylhs.value.as < expression > () = ctx.use(yystack_[0].value.as < std::string > ());}
-#line 2889 "conj.cc.re"
+#line 2899 "conj.cc.re"
     break;
 
-  case 41: // expr: '(' expr cl_parens1
-#line 187 "conj.y"
-                                                                        {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ());}
-#line 2895 "conj.cc.re"
+  case 41: // expr: '(' exprs cl_parens1
+#line 197 "conj.y"
+                                                                         {yylhs.value.as < expression > () = M(yystack_[1].value.as < expression > ());}
+#line 2905 "conj.cc.re"
     break;
 
   case 42: // expr: expr '[' exprs1 cl_bracket1
-#line 188 "conj.y"
+#line 198 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_deref(e_add(M(yystack_[3].value.as < expression > ()), M(yystack_[1].value.as < expression > ()))); }
-#line 2901 "conj.cc.re"
+#line 2911 "conj.cc.re"
     break;
 
   case 43: // expr: expr '(' cl_parens1
-#line 189 "conj.y"
+#line 199 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_fcall(M(yystack_[2].value.as < expression > ()));}
-#line 2907 "conj.cc.re"
+#line 2917 "conj.cc.re"
     break;
 
   case 44: // expr: expr '(' c_expr1 cl_parens1
-#line 190 "conj.y"
+#line 200 "conj.y"
                                                                         {yylhs.value.as < expression > () = e_fcall(M(yystack_[3].value.as < expression > ())); yylhs.value.as < expression > ().params.splice(yylhs.value.as < expression > ().params.end(), M(yystack_[1].value.as < expression > ().params)); }
-#line 2913 "conj.cc.re"
+#line 2923 "conj.cc.re"
     break;
 
   case 45: // expr: expr '=' error
-#line 191 "conj.y"
+#line 201 "conj.y"
                    {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 2919 "conj.cc.re"
+#line 2929 "conj.cc.re"
     break;
 
   case 46: // expr: expr '=' expr
-#line 191 "conj.y"
+#line 201 "conj.y"
                                                                                                          {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ())%= M(yystack_[0].value.as < expression > ()); }
-#line 2925 "conj.cc.re"
+#line 2935 "conj.cc.re"
     break;
 
   case 47: // expr: expr '+' error
-#line 192 "conj.y"
+#line 202 "conj.y"
                    {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 2931 "conj.cc.re"
+#line 2941 "conj.cc.re"
     break;
 
   case 48: // expr: expr '+' expr
-#line 192 "conj.y"
+#line 202 "conj.y"
                                                                                                          {yylhs.value.as < expression > () = e_add(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
-#line 2937 "conj.cc.re"
+#line 2947 "conj.cc.re"
     break;
 
   case 49: // expr: expr '-' error
-#line 193 "conj.y"
+#line 203 "conj.y"
                    {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 2943 "conj.cc.re"
+#line 2953 "conj.cc.re"
     break;
 
   case 50: // expr: expr '-' expr
-#line 193 "conj.y"
+#line 203 "conj.y"
                                                                                                          {yylhs.value.as < expression > () = e_add(M(yystack_[2].value.as < expression > ()), e_neg(M(yystack_[0].value.as < expression > ()))); }
-#line 2949 "conj.cc.re"
+#line 2959 "conj.cc.re"
     break;
 
   case 51: // expr: expr "+=" error
-#line 194 "conj.y"
+#line 204 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 2955 "conj.cc.re"
+#line 2965 "conj.cc.re"
     break;
 
   case 52: // expr: expr "+=" expr
-#line 194 "conj.y"
+#line 204 "conj.y"
                                                                                                          { if(!yystack_[0].value.as < expression > ().is_pure()){yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[2].value.as < expression > ())); yystack_[2].value.as < expression > ()= e_deref(yylhs.value.as < expression > ().params.back());}
                                                                          yylhs.value.as < expression > () = e_comma (M(yylhs.value.as < expression > ()), M(yystack_[2].value.as < expression > ()) %= e_add(C(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()))); }
-#line 2962 "conj.cc.re"
+#line 2972 "conj.cc.re"
     break;
 
   case 53: // expr: expr "-=" error
-#line 196 "conj.y"
+#line 206 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 2968 "conj.cc.re"
+#line 2978 "conj.cc.re"
     break;
 
   case 54: // expr: expr "-=" expr
-#line 196 "conj.y"
+#line 206 "conj.y"
                                                                                                          { if(!yystack_[0].value.as < expression > ().is_pure()){yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[2].value.as < expression > ())); yystack_[2].value.as < expression > ()= e_deref(yylhs.value.as < expression > ().params.back());}
                                                                          yylhs.value.as < expression > () = e_comma (M(yylhs.value.as < expression > ()), M(yystack_[2].value.as < expression > ()) %= e_add(C(yystack_[2].value.as < expression > ()), e_neg(M(yystack_[0].value.as < expression > ())))); }
-#line 2975 "conj.cc.re"
+#line 2985 "conj.cc.re"
     break;
 
   case 55: // expr: expr "++"
-#line 198 "conj.y"
+#line 208 "conj.y"
                                                                         { if(!yystack_[1].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[1].value.as < expression > ())); yystack_[1].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
                                                                          yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), M(yystack_[1].value.as < expression > ())%=e_add(C(yystack_[1].value.as < expression > ()), 1l)); }
-#line 2982 "conj.cc.re"
+#line 2992 "conj.cc.re"
     break;
 
   case 56: // expr: expr "--"
-#line 200 "conj.y"
+#line 210 "conj.y"
                                                                         { if(!yystack_[1].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[1].value.as < expression > ())); yystack_[1].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
                                                                          yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), M(yystack_[1].value.as < expression > ())%=e_add(C(yystack_[1].value.as < expression > ()), -1l)); }
-#line 2989 "conj.cc.re"
+#line 2999 "conj.cc.re"
     break;
 
   case 57: // expr: "++" error
-#line 202 "conj.y"
+#line 212 "conj.y"
                {}
-#line 2995 "conj.cc.re"
+#line 3005 "conj.cc.re"
     break;
 
   case 58: // expr: "++" expr
-#line 202 "conj.y"
+#line 212 "conj.y"
                                                                       { if(!yystack_[0].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[0].value.as < expression > ())); yystack_[0].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
                                                          auto i = ctx.temp(); yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), C(i) %= C(yystack_[0].value.as < expression > ()), C(yystack_[0].value.as < expression > ()) %= e_add(C(yystack_[0].value.as < expression > ()), 1l), C(i)); }
-#line 3002 "conj.cc.re"
+#line 3012 "conj.cc.re"
     break;
 
   case 59: // expr: "--" error
-#line 204 "conj.y"
+#line 214 "conj.y"
                {}
-#line 3008 "conj.cc.re"
+#line 3018 "conj.cc.re"
     break;
 
   case 60: // expr: "--" expr
-#line 204 "conj.y"
+#line 214 "conj.y"
                                                                       { if(!yystack_[0].value.as < expression > ().is_pure()){ yylhs.value.as < expression > () = ctx.temp() %= e_addrof(M(yystack_[0].value.as < expression > ())); yystack_[0].value.as < expression > () = e_deref(yylhs.value.as < expression > ().params.back()); }
                                                          auto i = ctx.temp(); yylhs.value.as < expression > () = e_comma(M(yylhs.value.as < expression > ()), C(i) %= C(yystack_[0].value.as < expression > ()), C(yystack_[0].value.as < expression > ()) %= e_add(C(yystack_[0].value.as < expression > ()), -1l), C(i)); }
-#line 3015 "conj.cc.re"
+#line 3025 "conj.cc.re"
     break;
 
   case 61: // expr: expr "||" error
-#line 206 "conj.y"
+#line 216 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 3021 "conj.cc.re"
+#line 3031 "conj.cc.re"
     break;
 
   case 62: // expr: expr "||" expr
-#line 206 "conj.y"
+#line 216 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_cor(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()));}
-#line 3027 "conj.cc.re"
+#line 3037 "conj.cc.re"
     break;
 
   case 63: // expr: expr "&&" error
-#line 207 "conj.y"
+#line 217 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 3033 "conj.cc.re"
+#line 3043 "conj.cc.re"
     break;
 
   case 64: // expr: expr "&&" expr
-#line 207 "conj.y"
+#line 217 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_cand(M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ()));}
-#line 3039 "conj.cc.re"
+#line 3049 "conj.cc.re"
     break;
 
   case 65: // expr: expr "==" error
-#line 208 "conj.y"
+#line 218 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 3045 "conj.cc.re"
+#line 3055 "conj.cc.re"
     break;
 
   case 66: // expr: expr "==" expr
-#line 208 "conj.y"
+#line 218 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_eq( M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())); }
-#line 3051 "conj.cc.re"
+#line 3061 "conj.cc.re"
     break;
 
   case 67: // expr: expr "!=" error
-#line 209 "conj.y"
+#line 219 "conj.y"
                     {yylhs.value.as < expression > () = M(yystack_[2].value.as < expression > ());}
-#line 3057 "conj.cc.re"
+#line 3067 "conj.cc.re"
     break;
 
   case 68: // expr: expr "!=" expr
-#line 209 "conj.y"
+#line 219 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_eq(e_eq( M(yystack_[2].value.as < expression > ()), M(yystack_[0].value.as < expression > ())), 0l); }
-#line 3063 "conj.cc.re"
+#line 3073 "conj.cc.re"
     break;
 
   case 69: // expr: '&' error
-#line 210 "conj.y"
+#line 220 "conj.y"
               {}
-#line 3069 "conj.cc.re"
+#line 3079 "conj.cc.re"
     break;
 
   case 70: // expr: '&' expr
-#line 210 "conj.y"
+#line 220 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_addrof(M(yystack_[0].value.as < expression > ())); }
-#line 3075 "conj.cc.re"
+#line 3085 "conj.cc.re"
     break;
 
   case 71: // expr: '*' error
-#line 211 "conj.y"
+#line 221 "conj.y"
               {}
-#line 3081 "conj.cc.re"
+#line 3091 "conj.cc.re"
     break;
 
   case 72: // expr: '*' expr
-#line 211 "conj.y"
+#line 221 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_deref(M(yystack_[0].value.as < expression > ())); }
-#line 3087 "conj.cc.re"
+#line 3097 "conj.cc.re"
     break;
 
   case 73: // expr: '-' error
-#line 212 "conj.y"
+#line 222 "conj.y"
               {}
-#line 3093 "conj.cc.re"
+#line 3103 "conj.cc.re"
     break;
 
   case 74: // expr: '-' expr
-#line 212 "conj.y"
+#line 222 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_neg(M(yystack_[0].value.as < expression > ())); }
-#line 3099 "conj.cc.re"
+#line 3109 "conj.cc.re"
     break;
 
   case 75: // expr: '!' error
-#line 213 "conj.y"
+#line 223 "conj.y"
               {}
-#line 3105 "conj.cc.re"
+#line 3115 "conj.cc.re"
     break;
 
   case 76: // expr: '!' expr
-#line 213 "conj.y"
+#line 223 "conj.y"
                                                                              {yylhs.value.as < expression > () = e_eq(M(yystack_[0].value.as < expression > ()), 0l); }
-#line 3111 "conj.cc.re"
+#line 3121 "conj.cc.re"
     break;
 
   case 77: // expr: expr '?' error
-#line 214 "conj.y"
+#line 224 "conj.y"
                    {yylhs.value.as < expression > ()=M(yystack_[2].value.as < expression > ());}
-#line 3117 "conj.cc.re"
+#line 3127 "conj.cc.re"
     break;
 
   case 78: // expr: expr '?' expr ':' expr
-#line 214 "conj.y"
+#line 224 "conj.y"
                                                                              {auto i = ctx.temp();
                                              yylhs.value.as < expression > () = e_comma(e_cor(e_cand(M(yystack_[4].value.as < expression > ()), e_comma(C(i) %= M(yystack_[2].value.as < expression > ()), 1l)), C(i) %= M(yystack_[0].value.as < expression > ())), C(i)); }
-#line 3124 "conj.cc.re"
+#line 3134 "conj.cc.re"
     break;
 
 
-#line 3128 "conj.cc.re"
+#line 3138 "conj.cc.re"
 
             default:
               break;
@@ -3483,19 +3493,19 @@ namespace yy {
   const short
   conj_parser::yypact_[] =
   {
-     -66,     7,   -66,   -66,     2,   -66,   -66,    28,   -66,    39,
-      22,   -66,   379,     2,   407,    34,    34,     2,   -66,   -66,
-     -66,    13,    55,    75,    95,   115,   438,   -66,   -66,   135,
-     -66,   -66,   -66,   348,    47,    43,   484,   -66,    43,   407,
-     379,   379,    46,   -66,   -66,    -3,   -66,    -3,   -66,    -3,
-     -66,    -3,   -66,    -3,   462,   -66,    -3,   -66,   -66,   -66,
-       2,   -66,   155,   175,   195,   215,   -66,   -66,   235,   255,
-     438,   275,   295,   315,   335,   411,   407,   -66,    41,   -66,
-     -66,   -66,   438,   -66,   -66,   -66,   -66,   443,   -66,     3,
-     -66,   530,   -66,   530,   -66,   520,   -66,   520,   -66,    56,
-     520,   -66,   502,   -66,   520,   -66,    -3,   -66,    -3,   -66,
-       1,    45,   -66,   520,   438,   438,   -66,   -66,   -66,   -66,
-     520
+     -66,    15,   -66,   -66,    16,   -66,   -66,    19,   -66,     9,
+      14,   -66,   379,    16,   407,     5,     5,    16,   -66,   -66,
+     -66,    13,    55,    75,    95,   115,   407,   -66,   -66,   135,
+     -66,   -66,   -66,   348,    22,    27,   462,   -66,    27,   407,
+     379,   379,    36,   -66,   -66,    -8,   -66,    -8,   -66,    -8,
+     -66,    -8,   -66,    -8,     2,   -66,    -8,   -66,   -66,   -66,
+      16,   -66,   155,   175,   195,   215,   -66,   -66,   235,   255,
+     438,   275,   295,   315,   335,   411,   407,   -66,     2,   -66,
+     -66,   -66,   438,   -66,   -66,   -66,   -66,   443,   -66,   514,
+     -66,   508,   -66,   508,   -66,   498,   -66,   498,   -66,    40,
+     498,   -66,   480,   -66,   498,   -66,    -8,   -66,    -8,   -66,
+      -7,    29,   -66,   498,   438,   438,   -66,   -66,   -66,   -66,
+     498
   };
 
   const signed char
@@ -3519,9 +3529,9 @@ namespace yy {
   const signed char
   conj_parser::yypgoto_[] =
   {
-     -66,   -66,   -66,   -66,   -66,   -66,   -66,    53,   -66,    20,
-     -66,   -66,   -65,    -7,     9,   -41,    61,    54,   -66,   -66,
-      26,    -8,    16,   -21
+     -66,   -66,   -66,   -66,   -66,   -66,   -66,    12,   -66,   -26,
+     -66,   -66,   -65,    -6,   -16,   -49,    50,    35,   -66,   -66,
+      11,    -9,    -3,   -21
   };
 
   const signed char
@@ -3535,16 +3545,16 @@ namespace yy {
   const signed char
   conj_parser::yytable_[] =
   {
-      45,    47,    49,    51,    53,    54,    38,     3,    56,     5,
-     109,    66,    67,   112,    44,    64,    65,    66,    67,   114,
-      18,    19,    20,    75,    76,    73,    74,    21,    22,    75,
-      76,    79,    83,    80,    81,     8,    23,    24,    25,    26,
-      13,    87,    89,    91,    93,   116,    29,    95,    97,   100,
-     102,   104,   106,   108,   100,    61,    46,     6,    77,    11,
-      39,   113,    18,    19,    20,    60,    37,    82,    79,    21,
-      22,    27,    83,   119,   114,   117,    48,    41,    23,    24,
-      25,    26,    18,    19,    20,   111,    85,    59,    29,    21,
-      22,   110,     0,   100,   120,     0,    50,     0,    23,    24,
+      45,    47,    49,    51,    53,    38,    66,    67,    56,    61,
+     109,   114,    77,   112,    44,     3,     6,    54,    75,    76,
+      18,    19,    20,     5,    83,    37,     8,    21,    22,    11,
+      79,    39,    13,    83,    80,    81,    23,    24,    25,    26,
+      60,    87,    89,    91,    93,   116,    29,    95,    97,   100,
+     102,   104,   106,   108,   100,    27,    46,    82,   114,   117,
+     111,   113,    18,    19,    20,   119,    41,    79,    59,    21,
+      22,    85,   110,     0,     0,     0,    48,     0,    23,    24,
+      25,    26,    18,    19,    20,     0,     0,     0,    29,    21,
+      22,     0,     0,   100,   120,     0,    50,     0,    23,    24,
       25,    26,    18,    19,    20,     0,     0,     0,    29,    21,
       22,     0,     0,     0,     0,     0,    52,     0,    23,    24,
       25,    26,    18,    19,    20,     0,     0,     0,    29,    21,
@@ -3583,29 +3593,28 @@ namespace yy {
        0,     0,    21,    22,    63,    64,    65,    66,    67,     0,
        0,    23,    24,    25,    26,    73,    74,     0,     0,    75,
       76,    29,    62,    63,    64,    65,    66,    67,    68,    69,
-       0,    71,     0,    72,    73,    74,     0,     0,    75,    76,
-       0,     0,     0,    83,    62,    63,    64,    65,    66,    67,
-      68,    69,    70,    71,     0,    72,    73,    74,     0,     0,
-      75,    76,    62,    63,    64,    65,    66,    67,    68,    69,
-       0,    71,   115,    72,    73,    74,     0,     0,    75,    76,
+      70,    71,     0,    72,    73,    74,     0,     0,    75,    76,
       62,    63,    64,    65,    66,    67,    68,    69,     0,    71,
-       0,    72,    73,    74,    66,    67,    75,    76,     0,     0,
-       0,     0,    73,    74,     0,     0,    75,    76
+     115,    72,    73,    74,     0,     0,    75,    76,    62,    63,
+      64,    65,    66,    67,    68,    69,     0,    71,     0,    72,
+      73,    74,    66,    67,    75,    76,    64,    65,    66,    67,
+      73,    74,     0,     0,    75,    76,    73,    74,     0,     0,
+      75,    76
   };
 
   const signed char
   conj_parser::yycheck_[] =
   {
-      21,    22,    23,    24,    25,    26,    14,     0,    29,     7,
-      75,    14,    15,    78,     1,    12,    13,    14,    15,    18,
-       7,     8,     9,    26,    27,    22,    23,    14,    15,    26,
-      27,    39,    31,    40,    41,     7,    23,    24,    25,    26,
+      21,    22,    23,    24,    25,    14,    14,    15,    29,    35,
+      75,    18,    38,    78,     1,     0,     4,    26,    26,    27,
+       7,     8,     9,     7,    31,    13,     7,    14,    15,    20,
+      39,    26,    18,    31,    40,    41,    23,    24,    25,    26,
       18,    62,    63,    64,    65,   110,    33,    68,    69,    70,
-      71,    72,    73,    74,    75,    35,     1,     4,    38,    20,
-      26,    82,     7,     8,     9,    18,    13,    21,    76,    14,
-      15,    28,    31,   114,    18,    30,     1,    16,    23,    24,
-      25,    26,     7,     8,     9,    76,    60,    33,    33,    14,
-      15,    75,    -1,   114,   115,    -1,     1,    -1,    23,    24,
+      71,    72,    73,    74,    75,    28,     1,    21,    18,    30,
+      76,    82,     7,     8,     9,   114,    16,    76,    33,    14,
+      15,    60,    75,    -1,    -1,    -1,     1,    -1,    23,    24,
+      25,    26,     7,     8,     9,    -1,    -1,    -1,    33,    14,
+      15,    -1,    -1,   114,   115,    -1,     1,    -1,    23,    24,
       25,    26,     7,     8,     9,    -1,    -1,    -1,    33,    14,
       15,    -1,    -1,    -1,    -1,    -1,     1,    -1,    23,    24,
       25,    26,     7,     8,     9,    -1,    -1,    -1,    33,    14,
@@ -3644,14 +3653,13 @@ namespace yy {
       -1,    -1,    14,    15,    11,    12,    13,    14,    15,    -1,
       -1,    23,    24,    25,    26,    22,    23,    -1,    -1,    26,
       27,    33,    10,    11,    12,    13,    14,    15,    16,    17,
-      -1,    19,    -1,    21,    22,    23,    -1,    -1,    26,    27,
-      -1,    -1,    -1,    31,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,    19,    -1,    21,    22,    23,    -1,    -1,
-      26,    27,    10,    11,    12,    13,    14,    15,    16,    17,
-      -1,    19,    20,    21,    22,    23,    -1,    -1,    26,    27,
+      18,    19,    -1,    21,    22,    23,    -1,    -1,    26,    27,
       10,    11,    12,    13,    14,    15,    16,    17,    -1,    19,
-      -1,    21,    22,    23,    14,    15,    26,    27,    -1,    -1,
-      -1,    -1,    22,    23,    -1,    -1,    26,    27
+      20,    21,    22,    23,    -1,    -1,    26,    27,    10,    11,
+      12,    13,    14,    15,    16,    17,    -1,    19,    -1,    21,
+      22,    23,    14,    15,    26,    27,    12,    13,    14,    15,
+      22,    23,    -1,    -1,    26,    27,    22,    23,    -1,    -1,
+      26,    27
   };
 
   const signed char
@@ -3662,7 +3670,7 @@ namespace yy {
        9,    14,    15,    23,    24,    25,    26,    28,    32,    33,
       43,    47,    51,    52,    53,    55,    57,    41,    55,    26,
       50,    50,    41,    54,     1,    57,     1,    57,     1,    57,
-       1,    57,     1,    57,    57,     1,    57,    29,    44,    51,
+       1,    57,     1,    57,    55,     1,    57,    29,    44,    51,
       18,    43,    10,    11,    12,    13,    14,    15,    16,    17,
       18,    19,    21,    22,    23,    26,    27,    43,    48,    55,
       47,    47,    21,    31,    46,    54,     1,    57,     1,    57,
@@ -3722,14 +3730,14 @@ namespace yy {
   const unsigned char
   conj_parser::yyrline_[] =
   {
-       0,   150,   150,   150,   151,   151,   152,   153,   154,   155,
-     156,   157,   158,   159,   160,   161,   162,   163,   164,   165,
+       0,   160,   160,   160,   161,   161,   162,   163,   164,   165,
      166,   167,   168,   169,   170,   171,   172,   173,   174,   175,
      176,   177,   178,   179,   180,   181,   182,   183,   184,   185,
-     186,   187,   188,   189,   190,   191,   191,   192,   192,   193,
-     193,   194,   194,   196,   196,   198,   200,   202,   202,   204,
-     204,   206,   206,   207,   207,   208,   208,   209,   209,   210,
-     210,   211,   211,   212,   212,   213,   213,   214,   214
+     186,   187,   188,   189,   190,   191,   192,   193,   194,   195,
+     196,   197,   198,   199,   200,   201,   201,   202,   202,   203,
+     203,   204,   204,   206,   206,   208,   210,   212,   212,   214,
+     214,   216,   216,   217,   217,   218,   218,   219,   219,   220,
+     220,   221,   221,   222,   222,   223,   223,   224,   224
   };
 
   void
@@ -3761,9 +3769,9 @@ namespace yy {
 
 
 } // yy
-#line 3765 "conj.cc.re"
+#line 3773 "conj.cc.re"
 
-#line 216 "conj.y"
+#line 226 "conj.y"
 
 
 yy::conj_parser::symbol_type yy::yylex(lexcontext& ctx)
@@ -3809,17 +3817,106 @@ void yy::conj_parser::error(const yy::location& l, const std::string& m)
     std::cerr << ';' << l.begin.line << ':' << l.begin.column << '-' << l.end.column << ": " << m << '\n'; 
 }
 #include <fstream>
+#include <memory>
+#include <unordered_map>
+#include <functional>
+#include <numeric>
+#include <set>
+
+/* GLOBAL DATA */
+std::vector<function> func_list;
+static bool pure_fcall(const expression& exp)
+{
+    /* identify the called function. note that the function could be any expression, not only a function identifier. */
+    if(const auto& p = exp.params.front(); is_ident(p) && is_function(p.ident))
+        if(auto called_function = p.ident.index; called_function < func_list.size())
+            if(const auto & f = func_list[called_function]; f.pure_known && f.pure)
+             return true;
+    return false;
+}
 
 bool expression::is_pure() const
 {
     for(const auto& e: params) if(!e.is_pure()) return false;
     switch(type)
     {
-        case ex_type::fcall:    return false;
+        case ex_type::fcall:    return pure_fcall(*this);
         case ex_type::copy:     return false;
         case ex_type::ret:      return false;
         case ex_type::loop:     return false;
         default:                return true;
+    }
+}
+
+bool expression::is_compiletime_expr() const
+{
+    for(const auto& e: params) if(!e.is_compiletime_expr()) return false;
+    switch(type)
+    {
+        case ex_type::number:   case ex_type::string:
+        case ex_type::add:      case ex_type::neg:      case ex_type::cand:     case ex_type::cor:
+        case ex_type::comma:    case ex_type::nop:
+            return true;
+        case ex_type::ident:
+            return is_function(ident);
+        default:
+            return false;
+    }
+}
+
+template<typename F, typename B, typename... A>
+static decltype(auto) callv(F&& func, B&& def, A&&... args){
+    if constexpr(std::is_invocable_r_v<B,F,A...>) { return std::forward<F>(func)(std::forward<A>(args)...); }
+    else                                          { static_assert(std::is_void_v<std::invoke_result_t<F,A...>>);
+                                                    std::forward<F>(func)(std::forward<A>(args)...); return std::forward<B>(def); }
+}
+
+template<typename E, typename... F>
+static bool for_all_expr(E& p, bool inclusive, F&&... funcs)
+{
+    static_assert(std::conjunction_v<std::is_invocable<F,expression&>...>);
+    return std::any_of(p.params.begin(), p.params.end(), [&](E& e) { return for_all_expr(e, true, funcs...); })
+            || (inclusive && ... && callv(funcs,false,p));
+}
+
+static void FindPureFunctions()
+{
+    for(auto& f: func_list) f.pure_known = f.pure = false;
+    do {} while(std::count_if(func_list.begin(), func_list.end(), [&](function& f)
+    {
+        if(f.pure_known) return false;
+        std::cerr << "Identifying " << f.name << '\n';
+
+        bool unknown_functions      = false;
+        bool side_effects           = for_all_expr(f.code, true, [&](const expression& exp)
+        {
+            if(is_copy(exp)) { return for_all_expr(exp.params.back(), true, is_deref); }
+            if(is_fcall(exp))
+            {
+                const auto& e = exp.params.front();
+                if(!e.is_compiletime_expr()) return true;
+                const auto& u = func_list[e.ident.index];
+                if(u.pure_known && !u.pure) return true;
+                if(!u.pure_known && e.ident.index != (&f - &func_list[0]))
+                {
+                    std::cerr << "Function " << f.name << " calls unknown function " << u.name << ".\n";
+                    unknown_functions = true; 
+                }
+            }
+            return false;
+        });
+        if(side_effects || !unknown_functions)
+        {
+            f.pure_known    = true;
+            f.pure          = !side_effects;
+            std::cerr << "Function " << f.name << (f.pure ? " is pure.\n" : " may have side-effects.\n");
+            return true;
+        }
+        return false;
+    }));
+    for(auto& f : func_list){
+        if(!f.pure_known)
+        std::cerr << "Could not figure out whether " << f.name << " is a pure function or not.\n";
     }
 }
 
@@ -3900,6 +3997,271 @@ static std::string stringify_tree(const function& f)
     return result;
 }
 
+static bool equal(const expression& a, const expression& b)
+{
+    return  (a.type == b.type)
+        &&  (!is_ident(a)   || (a.ident.type == b.ident.type && a.ident.index == b.ident.index))
+        &&  (!is_string(a)  || a.strvalue == b.strvalue)
+        &&  (!is_number(a)  || a.numvalue == b.numvalue)
+        &&  std::equal(a.params.begin(), a.params.end(), b.params.begin(), b.params.end(), equal);
+    
+}
+
+static void ConstantFolding(expression& e, function& f)
+{
+    if((is_add(e) || is_comma(e) || is_cor(e) || is_cand(e)))
+    {
+        //adopt all params of that same type
+        for(auto j = e.params.end(); j != e.params.begin(); )
+        if((--j)-> type == e.type)
+        {
+            // adopt all params of that parameter. Delete *j. funcall(a, b, anotherfuncall(c,d)) ----> funcall(a, b, c, d)
+            auto tmp(M(j->params));
+            e.params.splice(j = e.params.erase(j), std::move(tmp));
+        }
+    }
+
+    /*  
+        if an assign operator (copy) is used as a parameter to any other kind of expression rather than a comma or an addrof 
+        create a comma sequence, such that x + 3 + (y=4) ----> x + 3 + (y=4, 4).
+        if the RHS of the assign has side effects like a funcall(), use a temporary expression.
+        x + (y = funcall()) ----> x + (temp=funcall(), y = temp, temp) 
+    */
+    if(!is_comma(e) && !is_addrof(e) && !e.params.empty())
+        for(auto i = e.params.begin(), j = (is_loop(e) ? std::next(i) : e.params.end()); i != j; ++i)
+            if(is_copy(*i))
+            {
+                auto assign = M(*i); *i = e_comma();
+                if(assign.params.front().is_pure())
+                {
+                    i->params.push_back(C(assign.params.front()));
+                    i->params.push_front(M(assign));
+                }else{
+                    expression temp = f.maketemp();
+                    i->params.push_back(C(temp)                        %= M(assign.params.front()));
+                    i->params.push_back(M(assign.params.back())        %= C(temp));
+                    i->params.push_back(M(temp));
+                }
+            }
+
+    /*  
+        If expr has multiple params, such as in function calls, and any of those parameters are comma expressions,
+        keep only the last value in each comma expression. 
+        Convert funcall((a,b,c), (d,e,f), (g,h,i)) ----> funcall(a,b,temp=c,d,e,temp2=f,g,h, func(temp, temp2, i))
+        In this way, expr itself becomes a comma expression, providing the same optimization oppurtunity to the parent expression. 
+    */
+
+    if(std::find_if(e.params.begin(), e.params.end(), is_comma) != e.params.end())
+    {
+        auto end = (is_cand(e) || is_cor(e) || is_loop(e)) ? std::next(e.params.begin()) : e.params.end();
+        for(; end != e.params.begin(); --end)
+        {
+            auto prev = std::prev(end);
+            if(is_comma(*prev) && prev->params.size() > 1) break;
+        }
+        expr_vec comma_params;
+        for(expr_vec::iterator i = e.params.begin(); i != end; ++i)
+        {
+            if(std::next(i) == end)
+            {
+                if(is_comma(*i) && i->params.size() > 1)
+                    comma_params.splice(comma_params.end(), i->params, i->params.begin(), std::prev(i->params.end()));
+            }
+            else if (!i->is_compiletime_expr())
+            {
+                expression temp = f.maketemp();
+                if(is_comma(*i) && i->params.size() > 1)
+                    comma_params.splice(comma_params.end(), i->params, i->params.begin(), std::prev(i->params.end()));
+                comma_params.insert(comma_params.end(), C(temp) %= M(*i));
+                *i = M(temp);
+            }
+        }
+        if(!comma_params.empty())
+        {
+            /* 
+                if the condition to a loop statement is a comma expression,
+                replicate the expression to make it better optimizable
+                while(a,b,c) { code } ----> a; b; while(c) {code; a; b; }
+            */
+            if(is_loop(e)) { for(auto &f : comma_params) e.params.push_back(C(f)); }
+            comma_params.push_back(M(e));
+            e = e_comma(M(comma_params));
+        }
+    }
+
+    switch(e.type)
+    {   
+        case ex_type::add:
+        {
+            // Count the sum of literals
+            long tmp = std::accumulate(e.params.begin(), e.params.end(), 0l,
+                                        [](long n, auto& p ) { return is_number(p) ? n + p.numvalue : n;});
+            // And remove them
+            e.params.remove_if(is_number);
+            // Adopt all negated adds: x + -(y + z) ----> x + -(y) + -(z)
+            for(auto j = e.params.begin(); j != e.params.end(); ++j)
+                if(is_neg(*j) && is_add(j->params.front()))
+                {
+                    auto tmp(std::move(j->params.front().params));
+                    for(auto& p: tmp) p = e_neg(M(p));
+                    e.params.splice(j = e.params.erase(j), std::move(tmp));
+                }
+            if(tmp != 0) e.params.push_back(tmp);
+            if(std::count_if(e.params.begin(), e.params.end(), is_neg) > long(e.params.size()/2))
+            {
+                for(auto& p: e.params) p = e_neg(M(p));
+                e = e_neg(M(e));
+            }
+            break;
+        }
+        case ex_type::neg:
+            //if the parameter is a literal, replace it with a negated version of it.
+            if(is_number(e.params.front())) e = -e.params.front().numvalue;
+            else if(is_neg(e.params.front())) e = C(M(e.params.front().params.front()));
+            break;
+
+        case ex_type::eq:
+            if(is_number(e.params.front()) && is_number(e.params.back()))
+             e = long(e.params.front().numvalue == e.params.back().numvalue);
+             else if(equal(e.params.front(), e.params.back()) && e.params.front().is_pure())
+             e = 1l;
+             break;
+
+        case ex_type::deref:
+            if(is_addrof(e.params.front())) e = C(M(e.params.front().params.front()));
+            break;
+
+        case ex_type::addrof:
+            if(is_deref(e.params.front())) e = C(M(e.params.front().params.front()));
+            break;
+
+        case ex_type::cand:
+        case ex_type::cor:
+        {
+            auto value_kind = is_cand(e) ? [](long v){ return v!=0; } : [] (long v){ return v==0; };
+            e.params.erase(std::remove_if(e.params.begin(), e.params.end(),
+                                          [&](expression& p) { return is_number(p) && value_kind(p.numvalue); }),
+                                          e.params.end());
+            if(auto i = std::find_if(e.params.begin(),e.params.end(),[&](const expression& p)
+                                    { return is_number(p) && !value_kind(p.numvalue); });
+                                    i != e.params.end())
+            {
+                while(i!=e.params.begin() && std::prev(i)->is_pure()) { --i; }
+                e.params.erase(i, e.params.end());
+                e = e_comma (M(e), is_cand(e) ? 0l : 1l);
+            }
+            break;
+        }
+
+        case ex_type::copy:
+        {
+            auto& tgt = e.params.back(), &src = e.params.front();
+            /* 
+                If an assign-statement assigns into itself, and the expression has no side effects, replace with the lhs.
+            */
+            if(equal(tgt, src) && tgt.is_pure())
+                e = C(M(tgt));
+            else
+            {
+                expr_vec comma_params;
+                for_all_expr(src, true, [&](auto& e) { if(equal(e, tgt)) comma_params.push_back(C(e = f.maketemp()) %= C(tgt)); });
+                if(!comma_params.empty())
+                {
+                    comma_params.push_back(M(e));
+                    e = e_comma(M(comma_params));
+                }
+            }
+            break;
+        }
+        case ex_type::loop:
+        /* if the loop condition is a literal zero (false), delete the code that is never executed. */
+            if(is_number(e.params.front()) &&  !e.params.front().numvalue) { e = e_nop(); break; }
+            [[fallthrough]];
+        case ex_type::comma:
+        for(auto i = e.params.begin(); i != e.params.end(); )
+        {
+            /* For while(), leave the condition expression untouched.
+               For comma, leave the "final" expression untouched. */
+            if(is_loop(e))
+                {if(i==e.params.begin()) { ++i; continue; }}
+            else
+                {if(std::next(i) == e.params.end()) break;}
+            /* Delete all pure params except the last one. */
+            if(std::next(i) == e.params.end()) break;
+
+            if(i->is_pure())
+                { i = e.params.erase(i); }
+            else switch (i->type)
+            {
+                default:
+                    ++i;
+                    break;
+                case ex_type::fcall:
+                /* Even if the function call is not pure, it might be because of parameters, not the function itself.
+                    Check if only need to keep the parameters. */
+                    if(!pure_fcall(e)) {++i; break;}
+                    [[fallthrough]];
+                case ex_type::add:
+                case ex_type::neg:
+                case ex_type::eq:
+                case ex_type::addrof:
+                case ex_type::deref:
+                case ex_type::comma:
+                /* Adobt all params of the param. Delete *i. */
+                    auto tmp(std::move(i->params));
+                    e.params.splice(i = e.params.erase(i), std::move(tmp));
+            }
+        }
+        /* delete all parameters following a return statement or an infinite loop */
+            if(auto r = std::find_if(e.params.begin(), e.params.end(), [](const expression& e) { return is_ret(e) || (is_loop(e) && is_number(e.params.front()) && e.params.front().numvalue != 0); });
+               r != e.params.end() && ++r != e.params.end())
+               {
+                std::cerr << std::distance(r,e.params.end()) << " dead expressions deleted\n";
+                e.params.erase(r, e.params.end());
+               }
+            
+            if(e.params.size() == 2)
+            {
+                /* if the last element in the list is the same as the preceding assign-target, delete the last element. x = (a=3, a) -> x = (a=3) */
+                auto& last = e.params.back(), &prev = *std::next(e.params.rbegin());
+                if(is_copy(prev) && equal(prev.params.back(), last))
+                    e.params.pop_back();
+            }
+            if(e.params.size() == 1 && !is_loop(e))
+            {
+                e = C(M(e.params.front()));
+            }
+            break;
+
+        default:
+            break;
+    }
+    switch(e.params.size())
+    {
+        case 1: if(is_add(e))                           e= C(M(e.params.front()));
+                else if (is_cor(e) || is_cand(e))       e = e_eq(e_eq(M(e.params.front()), 0l), 0l);
+                break; 
+        case 0: if(is_add(e) || is_cor(e))              e = 0l;
+                else if(is_cand(e))                     e = 1l;
+    }
+}
+
+static void DoConstantFolding()
+{
+    do {} while (std::any_of(func_list.begin(), func_list.end(), [&](function& f){
+        /* 
+            Recalculate function purity; the status may have changed 
+            as unreachable statements have been deleted or altered.
+        */
+        FindPureFunctions();
+        std::string text_before = stringify(f);
+        std::cerr << "Before: " << text_before << '\n';
+        std::cerr << stringify_tree(f);
+        for_all_expr(f.code, true, [&](expression& e){ ConstantFolding(e,f); });
+        return stringify(f) != text_before;
+    }));
+}
+
 
 int main(int argc, char** argv)
 {
@@ -3914,7 +4276,13 @@ int main(int argc, char** argv)
 
     yy::conj_parser parser(ctx);
     parser.parse();
-    std::vector<function> func_list = std::move(ctx.func_list);
+    func_list = std::move(ctx.func_list);
 
+    std::cerr << "Initial\n";
+    for(const auto& f : func_list) std::cerr << stringify_tree(f);
+
+    DoConstantFolding();
+
+    std::cerr << "Final\n";
     for(const auto& f: func_list) std::cerr << stringify_tree(f);
 }

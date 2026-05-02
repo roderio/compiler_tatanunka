@@ -1,0 +1,5 @@
+test_comma:
+{    var x = 0;
+    var y = (10, 20, x = 5, 30, 40);
+    x = x;
+    return y;}

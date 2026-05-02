@@ -1,0 +1,6 @@
+test_math:
+{    var a = 10 + 20 + 5;
+    var b = (5 == 5);
+    var c = (0 && a);
+    var d = (1 || a);
+    return a + b;}

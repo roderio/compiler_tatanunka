@@ -62,6 +62,7 @@
         expression(long v)                  :type(ex_type::number), numvalue(v) {}
 
         bool is_pure() const;
+        bool is_compiletime_expr() const;
         expression operator%=(expression&& b) && {return expression(ex_type::copy, std::move(b), std::move(*this));}
     };
 
@@ -84,7 +85,7 @@
         unsigned num_vars = 0, num_params = 0;
         bool     pure     = false, pure_known = false;
 
-        expression maketemp() { expression r(identifier {id_type:: varable, num_vars, "$C" + std::to_string(num_vars)}); ++num_vars; return}
+        expression maketemp() { expression r(identifier {id_type::variable, num_vars, "$C" + std::to_string(num_vars)}); ++num_vars; return r;}
     };
 
     struct lexcontext;
@@ -193,7 +194,7 @@ c_expr1:    expr1                                                       {$$ = e_
 expr:       NUMCONST                                                    {$$ = $1;}
 |           STRINGCONST                                                 {$$ = M($1);}
 |           IDENTIFIER                                                  {$$ = ctx.use($1);};
-|           '(' expr cl_parens1                                         {$$ = M($2);}
+|           '(' exprs cl_parens1                                         {$$ = M($2);}
 |           expr '[' exprs1 cl_bracket1                                 {$$ = e_deref(e_add(M($1), M($3))); }
 |           expr '(' cl_parens1                                         {$$ = e_fcall(M($1));}
 |           expr '(' c_expr1 cl_parens1                                 {$$ = e_fcall(M($1)); $$.params.splice($$.params.end(), M($3.params)); }
@@ -298,6 +299,22 @@ bool expression::is_pure() const
     }
 }
 
+bool expression::is_compiletime_expr() const
+{
+    for(const auto& e: params) if(!e.is_compiletime_expr()) return false;
+    switch(type)
+    {
+        case ex_type::number:   case ex_type::string:
+        case ex_type::add:      case ex_type::neg:      case ex_type::cand:     case ex_type::cor:
+        case ex_type::comma:    case ex_type::nop:
+            return true;
+        case ex_type::ident:
+            return is_function(ident);
+        default:
+            return false;
+    }
+}
+
 template<typename F, typename B, typename... A>
 static decltype(auto) callv(F&& func, B&& def, A&&... args){
     if constexpr(std::is_invocable_r_v<B,F,A...>) { return std::forward<F>(func)(std::forward<A>(args)...); }
@@ -308,7 +325,7 @@ static decltype(auto) callv(F&& func, B&& def, A&&... args){
 template<typename E, typename... F>
 static bool for_all_expr(E& p, bool inclusive, F&&... funcs)
 {
-    static_assert(std::conjuction_v<std::is_invocable<F,expression&>...>);
+    static_assert(std::conjunction_v<std::is_invocable<F,expression&>...>);
     return std::any_of(p.params.begin(), p.params.end(), [&](E& e) { return for_all_expr(e, true, funcs...); })
             || (inclusive && ... && callv(funcs,false,p));
 }
@@ -321,25 +338,25 @@ static void FindPureFunctions()
         if(f.pure_known) return false;
         std::cerr << "Identifying " << f.name << '\n';
 
-        bool unknown_functions   = false;
-        bool side_effects       = for_all_expr(f.code, true, [&](const expression& exp))
+        bool unknown_functions      = false;
+        bool side_effects           = for_all_expr(f.code, true, [&](const expression& exp)
         {
             if(is_copy(exp)) { return for_all_expr(exp.params.back(), true, is_deref); }
             if(is_fcall(exp))
             {
                 const auto& e = exp.params.front();
-                if(!is_ident(e) || !is_function(e.ident)) return true;
+                if(!e.is_compiletime_expr()) return true;
                 const auto& u = func_list[e.ident.index];
                 if(u.pure_known && !u.pure) return true;
                 if(!u.pure_known && e.ident.index != (&f - &func_list[0]))
                 {
-                    std::cerr << "Function " << f.name << " calls unknown function " << u.name << '.\n';
+                    std::cerr << "Function " << f.name << " calls unknown function " << u.name << ".\n";
                     unknown_functions = true; 
                 }
             }
             return false;
-        };
-        if(side_effects || !unknown_function)
+        });
+        if(side_effects || !unknown_functions)
         {
             f.pure_known    = true;
             f.pure          = !side_effects;
@@ -445,21 +462,96 @@ static void ConstantFolding(expression& e, function& f)
 {
     if((is_add(e) || is_comma(e) || is_cor(e) || is_cand(e)))
     {
+        //adopt all params of that same type
         for(auto j = e.params.end(); j != e.params.begin(); )
         if((--j)-> type == e.type)
         {
+            // adopt all params of that parameter. Delete *j. funcall(a, b, anotherfuncall(c,d)) ----> funcall(a, b, c, d)
             auto tmp(M(j->params));
             e.params.splice(j = e.params.erase(j), std::move(tmp));
         }
     }
+
+    /*  
+        if an assign operator (copy) is used as a parameter to any other kind of expression rather than a comma or an addrof 
+        create a comma sequence, such that x + 3 + (y=4) ----> x + 3 + (y=4, 4).
+        if the RHS of the assign has side effects like a funcall(), use a temporary expression.
+        x + (y = funcall()) ----> x + (temp=funcall(), y = temp, temp) 
+    */
+    if(!is_comma(e) && !is_addrof(e) && !e.params.empty())
+        for(auto i = e.params.begin(), j = (is_loop(e) ? std::next(i) : e.params.end()); i != j; ++i)
+            if(is_copy(*i))
+            {
+                auto assign = M(*i); *i = e_comma();
+                if(assign.params.front().is_pure())
+                {
+                    i->params.push_back(C(assign.params.front()));
+                    i->params.push_front(M(assign));
+                }else{
+                    expression temp = f.maketemp();
+                    i->params.push_back(C(temp)                        %= M(assign.params.front()));
+                    i->params.push_back(M(assign.params.back())        %= C(temp));
+                    i->params.push_back(M(temp));
+                }
+            }
+
+    /*  
+        If expr has multiple params, such as in function calls, and any of those parameters are comma expressions,
+        keep only the last value in each comma expression. 
+        Convert funcall((a,b,c), (d,e,f), (g,h,i)) ----> funcall(a,b,temp=c,d,e,temp2=f,g,h, func(temp, temp2, i))
+        In this way, expr itself becomes a comma expression, providing the same optimization oppurtunity to the parent expression. 
+    */
+
+    if(std::find_if(e.params.begin(), e.params.end(), is_comma) != e.params.end())
+    {
+        auto end = (is_cand(e) || is_cor(e) || is_loop(e)) ? std::next(e.params.begin()) : e.params.end();
+        for(; end != e.params.begin(); --end)
+        {
+            auto prev = std::prev(end);
+            if(is_comma(*prev) && prev->params.size() > 1) break;
+        }
+        expr_vec comma_params;
+        for(expr_vec::iterator i = e.params.begin(); i != end; ++i)
+        {
+            if(std::next(i) == end)
+            {
+                if(is_comma(*i) && i->params.size() > 1)
+                    comma_params.splice(comma_params.end(), i->params, i->params.begin(), std::prev(i->params.end()));
+            }
+            else if (!i->is_compiletime_expr())
+            {
+                expression temp = f.maketemp();
+                if(is_comma(*i) && i->params.size() > 1)
+                    comma_params.splice(comma_params.end(), i->params, i->params.begin(), std::prev(i->params.end()));
+                comma_params.insert(comma_params.end(), C(temp) %= M(*i));
+                *i = M(temp);
+            }
+        }
+        if(!comma_params.empty())
+        {
+            /* 
+                if the condition to a loop statement is a comma expression,
+                replicate the expression to make it better optimizable
+                while(a,b,c) { code } ----> a; b; while(c) {code; a; b; }
+            */
+            if(is_loop(e)) { for(auto &f : comma_params) e.params.push_back(C(f)); }
+            comma_params.push_back(M(e));
+            e = e_comma(M(comma_params));
+        }
+    }
+
     switch(e.type)
     {   
         case ex_type::add:
+        {
+            // Count the sum of literals
             long tmp = std::accumulate(e.params.begin(), e.params.end(), 0l,
                                         [](long n, auto& p ) { return is_number(p) ? n + p.numvalue : n;});
+            // And remove them
             e.params.remove_if(is_number);
+            // Adopt all negated adds: x + -(y + z) ----> x + -(y) + -(z)
             for(auto j = e.params.begin(); j != e.params.end(); ++j)
-                if(is_neg(*j) && is_add(j->param.front()))
+                if(is_neg(*j) && is_add(j->params.front()))
                 {
                     auto tmp(std::move(j->params.front().params));
                     for(auto& p: tmp) p = e_neg(M(p));
@@ -472,9 +564,10 @@ static void ConstantFolding(expression& e, function& f)
                 e = e_neg(M(e));
             }
             break;
-
+        }
         case ex_type::neg:
-            if(is_number(e.params.front())) e = -e.param.front().numvalue;
+            //if the parameter is a literal, replace it with a negated version of it.
+            if(is_number(e.params.front())) e = -e.params.front().numvalue;
             else if(is_neg(e.params.front())) e = C(M(e.params.front().params.front()));
             break;
 
@@ -496,7 +589,7 @@ static void ConstantFolding(expression& e, function& f)
         case ex_type::cand:
         case ex_type::cor:
         {
-            auto value_kind = is_cand(e) ? [](long v){ return v!=0; } : [] (long v){ return v==0; }
+            auto value_kind = is_cand(e) ? [](long v){ return v!=0; } : [] (long v){ return v==0; };
             e.params.erase(std::remove_if(e.params.begin(), e.params.end(),
                                           [&](expression& p) { return is_number(p) && value_kind(p.numvalue); }),
                                           e.params.end());
@@ -511,17 +604,84 @@ static void ConstantFolding(expression& e, function& f)
             break;
         }
 
-        case ex_type::copy;
-            if(equal(e.params.front(), e.params.back()) && e.params.front().is_pure())
-            e = C(M(e.params.back()));
+        case ex_type::copy:
+        {
+            auto& tgt = e.params.back(), &src = e.params.front();
+            /* 
+                If an assign-statement assigns into itself, and the expression has no side effects, replace with the lhs.
+            */
+            if(equal(tgt, src) && tgt.is_pure())
+                e = C(M(tgt));
+            else
+            {
+                expr_vec comma_params;
+                for_all_expr(src, true, [&](auto& e) { if(equal(e, tgt)) comma_params.push_back(C(e = f.maketemp()) %= C(tgt)); });
+                if(!comma_params.empty())
+                {
+                    comma_params.push_back(M(e));
+                    e = e_comma(M(comma_params));
+                }
+            }
             break;
-
+        }
         case ex_type::loop:
+        /* if the loop condition is a literal zero (false), delete the code that is never executed. */
             if(is_number(e.params.front()) &&  !e.params.front().numvalue) { e = e_nop(); break; }
-            break;
-
+            [[fallthrough]];
         case ex_type::comma:
+        for(auto i = e.params.begin(); i != e.params.end(); )
+        {
+            /* For while(), leave the condition expression untouched.
+               For comma, leave the "final" expression untouched. */
+            if(is_loop(e))
+                {if(i==e.params.begin()) { ++i; continue; }}
+            else
+                {if(std::next(i) == e.params.end()) break;}
+            /* Delete all pure params except the last one. */
+            if(std::next(i) == e.params.end()) break;
+
+            if(i->is_pure())
+                { i = e.params.erase(i); }
+            else switch (i->type)
+            {
+                default:
+                    ++i;
+                    break;
+                case ex_type::fcall:
+                /* Even if the function call is not pure, it might be because of parameters, not the function itself.
+                    Check if only need to keep the parameters. */
+                    if(!pure_fcall(e)) {++i; break;}
+                    [[fallthrough]];
+                case ex_type::add:
+                case ex_type::neg:
+                case ex_type::eq:
+                case ex_type::addrof:
+                case ex_type::deref:
+                case ex_type::comma:
+                /* Adobt all params of the param. Delete *i. */
+                    auto tmp(std::move(i->params));
+                    e.params.splice(i = e.params.erase(i), std::move(tmp));
+            }
+        }
+        /* delete all parameters following a return statement or an infinite loop */
+            if(auto r = std::find_if(e.params.begin(), e.params.end(), [](const expression& e) { return is_ret(e) || (is_loop(e) && is_number(e.params.front()) && e.params.front().numvalue != 0); });
+               r != e.params.end() && ++r != e.params.end())
+               {
+                std::cerr << std::distance(r,e.params.end()) << " dead expressions deleted\n";
+                e.params.erase(r, e.params.end());
+               }
             
+            if(e.params.size() == 2)
+            {
+                /* if the last element in the list is the same as the preceding assign-target, delete the last element. x = (a=3, a) -> x = (a=3) */
+                auto& last = e.params.back(), &prev = *std::next(e.params.rbegin());
+                if(is_copy(prev) && equal(prev.params.back(), last))
+                    e.params.pop_back();
+            }
+            if(e.params.size() == 1 && !is_loop(e))
+            {
+                e = C(M(e.params.front()));
+            }
             break;
 
         default:
@@ -530,7 +690,7 @@ static void ConstantFolding(expression& e, function& f)
     switch(e.params.size())
     {
         case 1: if(is_add(e))                           e= C(M(e.params.front()));
-                else if (is_cor(e) || is_cand(e))       e = e_eq(e_eq(M(e.params.front), 0l), 0l);
+                else if (is_cor(e) || is_cand(e))       e = e_eq(e_eq(M(e.params.front()), 0l), 0l);
                 break; 
         case 0: if(is_add(e) || is_cor(e))              e = 0l;
                 else if(is_cand(e))                     e = 1l;
@@ -539,11 +699,18 @@ static void ConstantFolding(expression& e, function& f)
 
 static void DoConstantFolding()
 {
-    FindPureFunctions();
-    for(function& f : func_list)
-    {
-        for_all_expr(f.code, true, [&](expression& e){ CosntantFolding(e,f); });
-    }
+    do {} while (std::any_of(func_list.begin(), func_list.end(), [&](function& f){
+        /* 
+            Recalculate function purity; the status may have changed 
+            as unreachable statements have been deleted or altered.
+        */
+        FindPureFunctions();
+        std::string text_before = stringify(f);
+        std::cerr << "Before: " << text_before << '\n';
+        std::cerr << stringify_tree(f);
+        for_all_expr(f.code, true, [&](expression& e){ ConstantFolding(e,f); });
+        return stringify(f) != text_before;
+    }));
 }
 
 
