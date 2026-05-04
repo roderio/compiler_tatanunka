@@ -715,23 +715,32 @@ static void DoConstantFolding()
 }
 
 #include "transform_iterator.hh"
+#include "shuffle.hh"
 #include <string_view>
+#include <optional>
+#include <variant>
 
-#define ENUM_STATEMENTS(o) \
-        o(0, nop)           /* placeholder that does nothing.                                                */  \
-        o(1,init)           /* p0 <--- &IDENT + value (assign a pointer to name resource with offset)        */  \
-        o(0,add)            /* p0 <--- p1 + p2                                                               */  \
-        o(0,neg)            /* p0 <--- -p1                                                                   */  \
-        o(0,copy)           /* p0 <--- p1   (assign a copy of another variable)                              */  \
-        o(0,read)           /* p0 <--- *p1  (reading dereference)                                            */  \
-        o(0,write)          /* *p0 <--- p1  (writing dereference)                                            */  \
-        o(0,eq)             /* p0 <--- p1 == p2                                                              */  \
-        o(1,ifnz)           /* if(p0 != 0) <--- JMP branch                                                   */  \
-        o(0,fcall)          /* p0 <--- CALL(p1, <LIST>)                                                      */  \
-        o(0,ret)            /* RETURN p0;                                                                    */  \
+#define ENUM_STATEMENTS(o)      /* flags: #write_params, has_side_effects, special constructor; name */\
+        o(0b000, nop)           /* placeholder that does nothing.                                                */  \
+        o(0b101,init)           /* p0 <--- &IDENT + value (assign a pointer to name resource with offset)        */  \
+        o(0b100,add)            /* p0 <--- p1 + p2                                                               */  \
+        o(0b100,neg)            /* p0 <--- -p1                                                                   */  \
+        o(0b100,copy)           /* p0 <--- p1   (assign a copy of another variable)                              */  \
+        o(0b100,read)           /* p0 <--- *p1  (reading dereference)                                            */  \
+        o(0b010,write)          /* *p0 <--- p1  (writing dereference)                                            */  \
+        o(0b100,eq)             /* p0 <--- p1 == p2                                                              */  \
+        o(0b011,ifnz)           /* if(p0 != 0) <--- JMP branch                                                   */  \
+        o(0b110,fcall)          /* p0 <--- CALL(p1, <LIST>)                                                      */  \
+        o(0b010,ret)            /* RETURN p0;                                                                    */  \
 
 #define o(_,n) n,
+#define p(f,n) f,
+#define q(f,n) #n,
 enum class st_type{ ENUM_STATEMENTS(o) };
+static constexpr unsigned char st_flags[] { ENUM_STATEMENTS(p) };
+static constexpr const char* const st_names[] { ENUM_STATEMENTS(q) };
+#undef q
+#undef p
 #undef o
 
 template<typename T, typename... Bad>
@@ -747,6 +756,7 @@ using require_iterator_t = std::enable_if_t
 struct statement
 {
     typedef unsigned reg_type;
+    static constexpr reg_type nowhere = ~reg_type();
 
     st_type                 type{ st_type::nop };
     std::string             ident{};            //For init: reference to globals, empty=none
@@ -774,14 +784,35 @@ struct statement
     template<class...T, class It, class=require_iterator_t<It, reg_type, std::input_iterator_tag>>
     statement(It begin, It end, T&&...r)            : statement(std::forward<T>(r)...) { params.insert(params.begin(), begin, end); }
 
+    template<class...T>
+    void Reinit(T&&... r) // Reinitialize statement as a different one, without changing -> next
+    {
+        auto n = next;
+        *this = statement(std::forward<T>(r)...);
+        next = n;
+    }
+
+    template<typename F>
+    auto ForAllRegs(F&& func, std::size_t begin=0, std::size_t end = ~size_t())
+    {
+        return std::any_of(params.begin()+begin, params.begin()+std::min(end, params.size()),
+                          [&](reg_type& p) { return p != nowhere && callv(func,false,p, &p-&params[0]); });
+    }
+
+    template<typename F>
+    auto ForAllWriteRegs(F&& func) { return ForAllWriteRegs(std::forward<F>(func), 0, NumWriteRegs()); }
+    template<typename F>
+    auto ForAllReadRegs(F&& func) { return ForAllWriteRegs(std::forward<F>(func), 0, NumWriteRegs(), params.size()); }
+    
+    reg_type& lhs() { return params.front(); }
+    reg_type& rhs() { return params.back(); }
+
+    std::size_t NumWriteRegs() const { return st_flags[unsigned(type)]/4;}
+    bool HasSideEffects() const { return st_flags[unsigned(type)]&2;}
+
     void Dump(std::ostream& out) const
     {
-        switch(type)
-        {
-            #define o(_,n) case st_type::n: out << "\t" #n "\t"; break;
-            ENUM_STATEMENTS(o)
-            #undef o
-        }
+        out << '\t' << st_names[unsigned(type)] << '\t';
         for(auto u: params) out << " R" << u;
         if(type == st_type::init) { out << " \"" << ident << "\" " << value; } 
     }
@@ -838,10 +869,10 @@ struct compilation
 
         auto add_label = [l=0lu](data& d) mutable { d.labels.push_back('L' + std::to_string(l++)); };
         
-        for(const auto& s: entry_points)
+        for(const auto& [name,st]: entry_points)
         {
-            remaining_statements.push_back(s.second);
-            statistics[s.second].labels.push_back(s.first);
+            remaining_statements.push_back(st);
+            statistics[st].labels.push_back(name);
         }
         for(const auto& s: all_statements)
         {
@@ -920,7 +951,7 @@ struct compilation
             {
                 // Trivially reduce parameters from left to right
                 for(auto i = code.params.begin(); i != code.params.end(); ++i)
-                    if(statement::reg_type prev = result, last = result = Compile(*i, ctx); prev != ~0u)
+                    if(statement::reg_type prev = result, last = result = Compile(*i, ctx); prev != statement::nowhere)
                         {   if(is_add(code)) { put(s_add(result = make(), prev, last)); }
                             else if (is_eq(code)) { put(s_eq(result = make(), prev, last));} 
                             else /* *comma, no reducer: discard everything except the last stmt */ { result = last; }}
@@ -974,7 +1005,7 @@ struct compilation
                 // The end of the statement chain is linked into b_then.
                 // For loops, the chain is linked back into the start of the loop instead.
                 *ctx.tgt = is_loop(code) ? begin : b_then;
-                ctx.tgt = &end->next; // Code continues after the end node.
+                ctx.tgt = &end->next; // Code continues after the end statement.
                 break;
             }
         }
@@ -1003,7 +1034,7 @@ ENUM_STATEMENTS(o)
 
 
 
-int main(int argc, char** argv)
+int main(int /*argc*/, char** argv)
 {
     std::string filename = argv[1];
     std::ifstream f(filename);
@@ -1030,5 +1061,10 @@ int main(int argc, char** argv)
     code.Compile();
 
     std::cerr << "Compiled Code\n";
+    code.Dump(std::cerr);
+
+    code.Optimized();
+
+    std::cerr << "Optimized Code\n";
     code.Dump(std::cerr);
 }
