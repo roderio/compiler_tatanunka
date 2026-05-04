@@ -1,0 +1,29 @@
+// A simple function to test 'fcall' and 'add'
+add_numbers a, b : {
+    return a + b;
+}
+
+// Main entry point
+main : {
+    // 1. Test variables and constants ('init' and 'copy')
+    var x = 10;
+    var y = 20;
+    
+    // 2. Test function calls ('fcall')
+    var sum = add_numbers(x, y);
+
+    // 3. Test negation ('neg')
+    var negative_y = -y;
+
+    // 4. Test pointers / dereferencing ('read' and 'write')
+    var target = 0;
+    var ptr = &target;
+    *ptr = sum; 
+
+    // 5. Test loops and conditionals ('ifnz' and 'eq')
+    while (x != 0) {
+        x = x - 1;
+    }
+
+    return target;
+}
